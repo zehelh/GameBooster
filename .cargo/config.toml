@@ -1,0 +1,9 @@
+[build]
+target = "x86_64-pc-windows-msvc"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+opt-level = "z"  # Optimiser pour la taille 

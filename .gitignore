@@ -1,0 +1,38 @@
+# Fichiers générés par Rust
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# Fichiers de l'IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.github/
+
+# Fichiers de build Windows
+*.exe
+*.pdb
+*.dll
+*.lib
+*.exp
+
+# Fichiers temporaires
+*.tmp
+*.temp
+*.log
+
+# Fichiers de sauvegarde
+*~
+*.bak
+
+# Fichiers spécifiques au système d'exploitation
+.DS_Store
+Thumbs.db
+
+# Fichiers de configuration locaux
+.env
+.env.local
+
+# Dossiers de dépendances
+/vendor/

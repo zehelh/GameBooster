@@ -1,0 +1,99 @@
+# Requirements pour le développement de Simple Ram Cleaner
+# Dépendances de l'environnement de développement uniquement, l'application étant compilée en Rust
+
+# Outils de développement Rust
+rustup==1.25.2
+cargo==0.70.0
+rustc==1.70.0
+
+# Outils recommandés pour le développement
+cargo-watch==8.4.0    # Pour le développement avec rechargement automatique
+cargo-edit==0.11.9    # Pour gérer facilement les dépendances
+cargo-outdated==0.11.2 # Pour vérifier les dépendances obsolètes
+
+# Outils pour la génération des ressources Windows
+winres==0.1.12       # Ressources Windows
+
+# Outils pour le profiling et le débogage (optionnels)
+cargo-flamegraph==0.6.1  # Pour générer des flamegraphs de performance
+
+# Dépendances principales
+eframe==0.21.3
+egui==0.21.0
+rfd==0.11.0
+sysinfo==0.29.0
+wmi==1.5.1
+nvml-wrapper==0.8.0
+psutil==5.9.5
+toml==0.10.2
+appdirs==1.4.4
+
+# Dépendances optionnelles pour fonctionnalités avancées
+pyamdgpuinfo==2.1.0  # Pour les GPU AMD
+pywin32==303  # Pour Windows uniquement
+matplotlib==3.7.1  # Pour les graphiques
+
+# Utilitaires
+serde = { version = "1.0.188", features = ["derive"] }
+serde_json = "1.0.105"
+log = "0.4.20"
+env_logger = "0.10.0"
+dirs = "5.0.1"
+chrono = "0.4.31"
+
+# Spécifique à Linux
+libc = "0.2.147"
+
+# Tests et développement
+mockall = "0.11.4"
+tempfile = "3.8.0"
+
+# Dépendances pour la gestion GPU
+# - OpenHardwareMonitor: https://openhardwaremonitor.org/
+# - HWiNFO64: https://www.hwinfo.com/download/
+# - AMD GPU Metrics Tool: sur certains systèmes avec pilotes AMD
+
+# Compilation Tools
+cc = "1.0"
+
+# Dépendances Python pour outils auxiliaires
+PyQt5>=5.15.0
+
+# Outils de développement
+pytest==7.3.1
+pytest-cov==4.1.0
+black==23.3.0
+isort==5.12.0
+pylint==2.17.4
+mypy==1.3.0
+
+# Pour la documentation
+sphinx>=4.5.0
+sphinx-rtd-theme>=1.0.0
+
+# Note: les dépendances principales sont gérées via Cargo.toml (Rust)
+
+# Dépendances système
+Windows 10 ou plus récent
+NVIDIA CUDA Toolkit (pour le support des cartes NVIDIA)
+Visual C++ Redistributable 2019 ou plus récent
+
+# Dépendances Rust (Cargo.toml)
+[dependencies]
+eframe = "0.26.0"         # Framework GUI
+sysinfo = "0.30.0"       # Monitoring système
+nvml-wrapper = "0.9.0"   # Support NVIDIA GPU
+wmi = "0.13.0"           # Support AMD/Intel GPU
+log = "0.4.20"           # Logging
+env_logger = "0.11.0"    # Configuration du logging
+anyhow = "1.0.80"        # Gestion des erreurs
+chrono = "0.4.34"        # Gestion du temps
+
+[build-dependencies]
+winres = "0.1.12"         # Resources Windows (icône, manifest)
+
+# Dépendances optionnelles
+# Pour le support des cartes graphiques AMD:
+wmi = "0.13.1"
+# Pour le support des cartes graphiques Intel:
+intel-gpu-tools = "0.4.1" 
