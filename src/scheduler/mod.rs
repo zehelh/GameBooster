@@ -3,7 +3,7 @@ pub mod task;
 pub mod config;
 
 use serde::{Deserialize, Serialize};
-use chrono::{DateTime, Local, Duration};
+use chrono::{DateTime, Local};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -64,7 +64,7 @@ impl TaskScheduler {
         Vec::new()
     }
 
-    pub fn calculate_next_run(&self, task: &ScheduledTask) -> Option<DateTime<Local>> {
+    pub fn calculate_next_run(&self, _task: &ScheduledTask) -> Option<DateTime<Local>> {
         // Calculate next execution time based on schedule rule
         None
     }

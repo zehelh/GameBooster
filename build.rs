@@ -1,54 +1,49 @@
-// Fichier build.rs pour configurer l'application comme GUI sous Windows
-// Empêche l'affichage de la console avec l'interface graphique
-
 use std::env;
 use std::fs;
 use std::path::Path;
 
-// Logo intégré en tant que ressource
-const LOGO_BYTES: &[u8] = include_bytes!("./img/logo.png");
-
 fn main() {
-    #[cfg(target_os = "windows")]
-    {
-        let mut res = winres::WindowsResource::new();
-        
-        // Créer un fichier d'icône temporaire à partir du logo intégré
-        let out_dir = env::var("OUT_DIR").unwrap();
-        
-        // Approche simplifiée : utiliser un fichier PNG comme icône
-        // Windows Resource Compiler va le convertir automatiquement
-        let temp_png_path = Path::new(&out_dir).join("temp_logo.png");
-        fs::write(&temp_png_path, LOGO_BYTES).unwrap();
-        
-        // Utiliser le fichier PNG comme icône
-        res.set_icon(&temp_png_path.to_string_lossy());
-        
-        // Définir le sous-système comme GUI pour éviter la console
-        res.set_manifest(
-            r#"
-<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-<trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
-    <security>
-        <requestedPrivileges>
-            <requestedExecutionLevel level="requireAdministrator" uiAccess="false" />
-        </requestedPrivileges>
-    </security>
-</trustInfo>
-</assembly>
-"#,
+    // Obtenez le répertoire de sortie de Cargo (ex: target/release)
+    let out_dir = env::var("OUT_DIR").unwrap();
+    let dest_path = Path::new(&out_dir).join("../../..");
+
+    // Chemin vers le NSudo.exe dans le dossier resources
+    let nsudo_src_path = Path::new("resources/NSudo.exe");
+
+    // Copiez NSudo.exe s'il existe
+    if nsudo_src_path.exists() {
+        let nsudo_dest_path = dest_path.join("NSudo.exe");
+        println!("cargo:rerun-if-changed=resources/NSudo.exe");
+        fs::copy(nsudo_src_path, nsudo_dest_path).expect("Failed to copy NSudo.exe");
+    } else {
+        // Affichez un message d'avertissement si NSudo.exe n'est pas trouvé
+        println!(
+            "cargo:warning=NSudo.exe not found in 'resources' directory. \
+            Please download it and place it there for the TrustedInstaller feature to work."
         );
-            
-        if let Err(e) = res.compile() {
-            eprintln!("Erreur lors de la compilation des ressources: {}", e);
-        }
-        
-        // Force l'application à être compilée en tant qu'application Windows (GUI) 
-        // pour éviter la fenêtre console
-        println!("cargo:rustc-link-arg=/SUBSYSTEM:WINDOWS");
-        println!("cargo:rustc-link-arg=/ENTRY:mainCRTStartup");
     }
 
-    // Indique à Cargo de reconstruire le projet si les logos changent
-    println!("cargo:rerun-if-changed=img/logo.png");
+    // Copiez les fichiers WinDivert
+    let windivert_files = ["WinDivert.dll", "WinDivert64.sys"];
+    let windivert_src_dir = Path::new("resources/windivert");
+
+    if windivert_src_dir.exists() {
+        for file_name in &windivert_files {
+            let src_path = windivert_src_dir.join(file_name);
+            if src_path.exists() {
+                let dest_file_path = dest_path.join(file_name);
+                println!("cargo:rerun-if-changed={}", src_path.display());
+                fs::copy(&src_path, dest_file_path).expect("Failed to copy WinDivert file");
+            } else {
+                 println!(
+                    "cargo:warning={} not found in 'resources/windivert' directory.", file_name
+                );
+            }
+        }
+    } else {
+         println!(
+            "cargo:warning='resources/windivert' directory not found. \
+            The network features will not work correctly."
+        );
+    }
 } 

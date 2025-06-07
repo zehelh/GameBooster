@@ -1,279 +1,125 @@
-use anyhow::Result;
-use chrono::Local;
-use eframe::egui::{self, RichText, Align, Align2, Layout, TextStyle, Vec2, Color32, Rounding, Sense};
+use std::collections::HashSet;
+
+use crate::disk::{DiskCleaningOptions, DiskCleaningResults};
+use crate::memory::CleaningResults;
+use crate::services::defender::DefenderStatus;
+
+use eframe::egui;
+// use image::load_from_memory; // Temporairement désactivé pour éviter les crashes
 use poll_promise::Promise;
-use image::load_from_memory;
 
-use crate::memory::{CleaningResults, clean_memory, get_system_memory_info};
-use crate::utils::format_size;
+use crate::ui::{
+    disk_ui, memory_ui, network_ui, services_ui, settings_ui, scheduler_ui
+};
 
-// Structure principale pour l'application
+use crate::theme;
+
+#[derive(PartialEq, Debug, Clone, Copy)]
+pub enum Tab {
+    Memory,
+    Hdd,
+    Services,
+    Scheduler,
+    Network,
+    Settings,
+}
+
 pub struct CleanRamApp {
-    cleaning_promise: Option<Promise<Result<CleaningResults, String>>>,
-    last_results: Option<CleaningResults>,
-    show_admin_error: bool,
-    cleaning_progress: f32,
-    system_memory_info: (usize, usize),
-    logo_texture: Option<egui::TextureHandle>,
-    ram_icon_texture: Option<egui::TextureHandle>,
-    last_update: std::time::Instant,
+    pub active_tab: Tab,
+    pub theme: theme::Theme,
+    pub ram_usage: f32,
+    pub cleaning_promise: Option<Promise<CleaningResults>>,
+    pub last_cleaned_results: Option<CleaningResults>,
+    pub disk_options: DiskCleaningOptions,
+    pub disk_cleaning_promise: Option<Promise<DiskCleaningResults>>,
+    pub last_disk_cleaned_results: Option<DiskCleaningResults>,
+    pub processes: HashSet<u32>,
+    pub defender_status_promise: Option<Promise<Result<DefenderStatus, anyhow::Error>>>,
+    pub defender_action_promise: Option<Promise<Result<bool, anyhow::Error>>>,
+    pub last_defender_status: Option<Result<DefenderStatus, anyhow::Error>>,
+    pub windows_version_string: String,
+    pub logo: egui::TextureId,
+    pub ram_icon: egui::TextureId,
+    pub is_first_frame: bool,
 }
 
 impl CleanRamApp {
-    pub fn new(cc: &eframe::CreationContext<'_>, logo_bytes: &[u8], ram_icon_bytes: &[u8]) -> Self {
-        // Préchargement des ressources au démarrage avec le minimum nécessaire
-        let ctx = &cc.egui_ctx;
-        
-        // Charger uniquement le logo au démarrage pour accélérer le lancement
-        let logo_texture = match load_from_memory(logo_bytes) {
-            Ok(image) => {
-                let image = image.resize_exact(256, 256, image::imageops::FilterType::Lanczos3);
-                let size = [image.width() as _, image.height() as _];
-                let image_buffer = image.to_rgba8();
-                let pixels = image_buffer.into_raw();
-                
-                Some(ctx.load_texture(
-                    "logo",
-                    egui::ColorImage::from_rgba_unmultiplied(size, &pixels),
-                    egui::TextureOptions::default(),
-                ))
-            },
-            Err(_) => {
-                // Fallback logo en cas d'erreur
-                let size = [256, 256];
-                let mut pixels = vec![0; size[0] * size[1] * 4];
-                for i in 0..pixels.len() / 4 {
-                    pixels[i * 4 + 0] = 30;  // R
-                    pixels[i * 4 + 1] = 144; // G
-                    pixels[i * 4 + 2] = 255; // B
-                    pixels[i * 4 + 3] = 255; // A
-                }
-                
-                Some(ctx.load_texture(
-                    "logo",
-                    egui::ColorImage::from_rgba_unmultiplied(size, &pixels),
-                    egui::TextureOptions::default(),
-                ))
-            }
-        };
-          Self {
-            cleaning_promise: None,
-            last_results: None,
-            show_admin_error: false,
-            cleaning_progress: 0.0,
-            system_memory_info: get_system_memory_info(),
-            logo_texture,
-            ram_icon_texture: None, // Chargé à la demande
-            last_update: std::time::Instant::now(),
-        }
+    pub fn is_not_busy(&self) -> bool {
+        // Only block UI during heavy operations, not status checks
+        self.cleaning_promise.is_none() 
+            && self.disk_cleaning_promise.is_none() 
+            && self.defender_action_promise.is_none()
     }
 
-    fn start_cleaning(&mut self) {
-        if self.cleaning_promise.is_some() {
-            return; // Ne pas démarrer un nouveau nettoyage si un est en cours
-        }
+    pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
+        // Créer des textures simples sans charger d'images pour éviter les crashes
+        let dummy_texture_id = egui::TextureId::default();
+        
+        // Network manager initialization commented out for simplification
 
-        self.cleaning_progress = 0.0; // Réinitialiser la progression
-        self.cleaning_promise = Some(Promise::spawn_thread("cleaning", || {
-            match clean_memory() {
-                Ok(results) => Ok(results),
-                Err(e) => {
-                    let mut results = CleaningResults::new();
-                    results.has_error = true;
-                    results.error_message = e.to_string();
-                    results.is_completed = true;
-                    results.end_time = Some(Local::now());
-                    Ok(results)
-                }
-            }
-        }));
+        Self {
+            active_tab: Tab::Memory,
+            theme: theme::dark_theme(),
+            ram_usage: 0.0,
+            cleaning_promise: None,
+            last_cleaned_results: None,
+            disk_options: DiskCleaningOptions::default(),
+            disk_cleaning_promise: None,
+            last_disk_cleaned_results: None,
+            processes: HashSet::new(),
+            defender_status_promise: None,
+            defender_action_promise: None,
+            last_defender_status: None,
+            windows_version_string: format!("Windows {}", env!("CARGO_PKG_VERSION")),
+            logo: dummy_texture_id,
+            ram_icon: dummy_texture_id,
+            is_first_frame: true,
+        }
     }
 }
 
 impl eframe::App for CleanRamApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Configurer le thème avec des couleurs sobres
-        let mut style = (*ctx.style()).clone();
-        style.visuals.window_fill = Color32::from_rgb(25, 25, 25);
-        style.visuals.panel_fill = Color32::from_rgb(32, 32, 32);
-        ctx.set_style(style);
+        ctx.set_visuals(self.theme.visuals.clone());
 
-        // Mise à jour du timestamp
-        self.last_update = std::time::Instant::now();
-
-        // Vérifier si le nettoyage est terminé
-        if let Some(promise) = &self.cleaning_promise {
-            if let Some(result) = promise.ready() {
-                if let Ok(results) = result {
-                    self.last_results = Some(results.clone());
-                    self.cleaning_progress = 1.0;
-                }
-                self.cleaning_promise = None;
-            } else {
-                if self.cleaning_progress < 0.95 {
-                    self.cleaning_progress += 0.01;
-                }
-            }
-        }
-
-        // Interface unique avec CentralPanel
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.vertical_centered(|ui| {
-                ui.add_space(10.0);
-                  // En-tête avec logo et titre côte à côte
-                ui.horizontal(|ui| {
-                    ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
-                        if let Some(texture) = &self.logo_texture {
-                            // Taille fixe pour le logo dans l'interface
-                            let logo_size = Vec2::new(64.0, 64.0);
-                            ui.add(egui::Image::new(texture).fit_to_exact_size(logo_size));
-                            ui.add_space(10.0);
-                        }
-                        ui.heading("GameBooster");
-                    });
-                });
-                
-                ui.add_space(10.0);
-                ui.separator();
-                ui.add_space(10.0);
-                
-                // Interface RAM (unique)
-                let (total, avail) = self.system_memory_info;
-                    ui.horizontal(|ui| {
-                        ui.label("Mémoire système:");
-                        ui.label(format!("{} libres sur {} total", format_size(avail), format_size(total)));
-                    });
-                    ui.add_space(15.0);
-                    
-                    // Bouton de nettoyage RAM
-                    if self.cleaning_promise.is_none() {
-                        let button_text = "Nettoyer la mémoire cache";
-                        let button_size = Vec2::new(250.0, 40.0);
-                        let (rect, response) = ui.allocate_exact_size(button_size, Sense::click());
-                        
-                        let mut normal_color = Color32::from_rgb(30, 144, 255);  // Bleu normal
-                        let hover_color = Color32::from_rgb(20, 100, 200);      // Bleu plus foncé au survol
-                        
-                        if response.hovered() {
-                            normal_color = hover_color;
-                        }
-                        
-                        ui.painter().rect_filled(
-                            rect,
-                            Rounding::same(5.0),
-                            normal_color,
-                        );
-                        
-                        ui.painter().text(
-                            rect.center(),
-                            Align2::CENTER_CENTER,
-                            button_text,
-                            TextStyle::Button.resolve(ui.style()),
-                            Color32::WHITE,
-                        );
-                        
-                        if response.clicked() {
-                            if !is_elevated::is_elevated() {
-                                self.show_admin_error = true;
-                            } else {
-                                self.start_cleaning();
-                            }
-                        }
-                    } else {
-                        // Barre de progression du nettoyage RAM
-                        ui.add_space(5.0);
-                        let progress_bar = egui::widgets::ProgressBar::new(self.cleaning_progress)
-                            .animate(true)
-                            .show_percentage()
-                            .desired_width(250.0);
-                        ui.add(progress_bar);
-                        
-                        ui.add_space(5.0);
-                        ui.horizontal(|ui| {
-                            ui.spinner();
-                            ui.label(
-                                RichText::new("Nettoyage en cours...")
-                                    .size(16.0)
-                                    .color(egui::Color32::from_rgb(30, 144, 255))
-                            );
-                        });
-                    }
-                    
-                    // Affichage des résultats du nettoyage RAM
-                    if let Some(results) = &self.last_results {
-                        ui.add_space(15.0);
-                        ui.group(|ui| {
-                            ui.set_width(ui.available_width());
-                            ui.heading("Résultats du nettoyage");
-                            ui.horizontal(|ui| {
-                                ui.label("Mémoire libérée:");
-                                ui.label(
-                                    RichText::new(format_size(results.total_freed()))
-                                        .strong()
-                                        .color(egui::Color32::from_rgb(0, 180, 0))
-                                );
-                            });
-                            ui.horizontal(|ui| {
-                                ui.label("Processus nettoyés:");
-                                ui.label(RichText::new(format!("{}", results.processes.len())).strong());
-                            });
-                            ui.horizontal(|ui| {
-                                let elapsed = if let Some(end_time) = results.end_time {
-                                    (end_time - results.start_time).num_milliseconds() as f32 / 1000.0
-                                } else {
-                                    0.0
-                                };
-                                ui.label("Temps de nettoyage:");
-                                ui.label(RichText::new(format!("{:.2}s", elapsed)).strong());
-                            });
-                            
-                            // Détails des processus
-                            ui.collapsing("Détails des processus", |ui| {
-                                egui::ScrollArea::vertical().max_height(200.0).show(ui, |ui| {
-                                    let mut cleaned_processes = results.processes.clone();
-                                    cleaned_processes.sort_by(|a, b| b.memory_freed.cmp(&a.memory_freed));
-                                    
-                                    for process in cleaned_processes {
-                                        if process.memory_freed > 0 {
-                                            ui.horizontal(|ui| {
-                                                ui.label(&process.name);
-                                                ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                                                    ui.label(format_size(process.memory_freed));
-                                                });
-                                            });
-                                        }
-                                    }
-                                });
-                            });                        });
-                    }
+            ui.horizontal(|ui| {
+                if ui.selectable_label(self.active_tab == Tab::Memory, "🧠 Mémoire").clicked() {
+                    self.active_tab = Tab::Memory;
                 }
-                
-                // Affichage du message d'erreur administrateur
-                if self.show_admin_error {
-                    ui.add_space(10.0);
-                    ui.label(
-                        RichText::new("⚠️ Cette application nécessite des droits administrateur pour fonctionner correctement.")
-                            .color(egui::Color32::from_rgb(255, 100, 100))
-                    );
-                    ui.label("Veuillez la redémarrer en tant qu'administrateur.");
+                if ui.selectable_label(self.active_tab == Tab::Hdd, "💾 Disque").clicked() {
+                    self.active_tab = Tab::Hdd;
                 }
-                
-                // Version en bas
-                ui.add_space(5.0);
-                ui.with_layout(Layout::bottom_up(Align::Center), |ui| {
-                    ui.add_space(5.0);
-                    ui.label(
-                        RichText::new(format!("v{}", env!("CARGO_PKG_VERSION")))
-                            .small()
-                            .color(Color32::GRAY)
-                    );
-                });
+                if ui.selectable_label(self.active_tab == Tab::Services, "🛡️ Services").clicked() {
+                    self.active_tab = Tab::Services;
+                }
+                if ui.selectable_label(self.active_tab == Tab::Scheduler, "⏰ Planificateur").clicked() {
+                    self.active_tab = Tab::Scheduler;
+                }
+                if ui.selectable_label(self.active_tab == Tab::Network, "🌐 Réseau").clicked() {
+                    self.active_tab = Tab::Network;
+                }
+                if ui.selectable_label(self.active_tab == Tab::Settings, "⚙️ Paramètres").clicked() {
+                    self.active_tab = Tab::Settings;
+                }
             });
+
+            ui.separator();
+
+            let theme_clone = self.theme.clone();
+            match self.active_tab {
+                Tab::Memory => memory_ui::draw_memory_tab(self, ui, &theme_clone),
+                Tab::Hdd => disk_ui::draw_disk_tab(self, ui),
+                Tab::Services => services_ui::services_ui(self, ui),
+                Tab::Scheduler => scheduler_ui::draw_scheduler_tab(self, ui),
+                Tab::Network => network_ui::draw_network_tab(self, ui),
+                Tab::Settings => settings_ui::draw_settings_tab(self, ui),
+            }
         });
-        
-        // Demander une mise à jour continue pendant le nettoyage
-        if self.cleaning_promise.is_some() {
-            ctx.request_repaint();
+
+        if self.is_first_frame {
+            self.is_first_frame = false;
+            // Pas de vérification automatique au lancement pour éviter l'ouverture de PowerShell
         }
     }
-}
+} 

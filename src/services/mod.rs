@@ -1,11 +1,14 @@
 // Windows services optimization module
 pub mod defender;
-pub mod gaming_services;
+pub mod powershell_runner;
+pub mod winapi_defender;
+pub mod winapi_service_manager;
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::process::Command;
 use chrono::{DateTime, Local};
+use crate::services::defender::DefenderService;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ServiceAction {
@@ -68,7 +71,7 @@ pub async fn optimize_services_for_gaming() -> Result<ServicesOptimizationResult
     let mut results = ServicesOptimizationResults::new();
 
     // Disable Windows Defender (with user consent)
-    match defender::disable_defender_temporarily().await {
+    match handle_disable_defender().await {
         Ok(disabled) => {
             results.defender_disabled = disabled;
             if disabled {
@@ -89,20 +92,8 @@ pub async fn optimize_services_for_gaming() -> Result<ServicesOptimizationResult
                 action: ServiceAction::Disable,
                 timestamp: Local::now(),
                 success: false,
-                error_message: Some(e.to_string()),
+                error_message: Some(e),
             });
-        }
-    }
-
-    // Optimize other gaming-related services
-    match gaming_services::optimize_gaming_services().await {
-        Ok(operations) => {
-            for op in operations {
-                results.add_operation(op);
-            }
-        }
-        Err(e) => {
-            results.errors.push(format!("Gaming services optimization error: {}", e));
         }
     }
 
@@ -136,5 +127,15 @@ pub fn get_service_status(service_name: &str) -> Result<String> {
         Ok("Stopping".to_string())
     } else {
         Ok("Unknown".to_string())
+    }
+}
+
+pub async fn handle_disable_defender() -> Result<bool, String> {
+    match DefenderService::disable_immediately() {
+        Ok(status) => {
+            // Check if the operation was successful based on the status
+            Ok(!status.real_time_protection)
+        }
+        Err(e) => Err(format!("Failed to disable Windows Defender: {}", e)),
     }
 }

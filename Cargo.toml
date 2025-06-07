@@ -2,34 +2,38 @@
 name = "gamebooster"
 version = "1.1.0"
 edition = "2021"
-authors = ["Your Name"]
-description = "A comprehensive PC optimization and cleaning utility for gaming"
 
 [dependencies]
-eframe = "0.26.0"
-egui = "0.26.0"
-sysinfo = "0.30.5"
-anyhow = "1.0.79"
-chrono = "0.4.34"
-image = "0.24.9"
+anyhow = "1.0"
+async-process = "2.3.0"
+chrono = { version = "0.4", features = ["serde"] }
+eframe = { version = "0.27.2", features = ["persistence"] }
+egui = "0.27.2"
+egui_extras = { version = "0.27.2", features = ["image"] }
+image = "0.25.1"
 is_elevated = "0.1.2"
-serde_json = "1.0"
-serde = { version = "1.0", features = ["derive"] }
 poll-promise = "0.3.0"
-tokio = { version = "1.0", features = ["full"] }
-walkdir = "2.4.0"
-winapi = { version = "0.3.9", features = ["winbase", "processthreadsapi", "psapi", "sysinfoapi", "winuser"] }
-windows = { version = "0.52.0", features = [
-    "Win32_UI",
-    "Win32_UI_WindowsAndMessaging",
-    "Win32_System_Threading",
-    "Win32_System_ProcessStatus",
-    "Win32_Foundation"
-] }
-windows-core = "0.52.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+smol = "2.0.0"
+sys-info = "0.9"
+sysinfo = "0.30.13"
+thiserror = "1.0.63"
+tokio = { version = "1.39.2", features = ["full"] }
+tracing = "0.1.40"
+tracing-appender = "0.2.3"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+walkdir = "2.5.0"
+web-time = "0.2.0"
+webbrowser = "0.8.15"
+winapi = { version = "0.3.9", features = ["winuser", "processthreadsapi", "handleapi", "memoryapi"] }
+windows = { version = "0.52.0", features = ["Win32_Foundation", "Win32_Security", "Win32_System_Diagnostics_Debug", "Win32_System_Threading", "Win32_UI_WindowsAndMessaging"] }
+windows-sys = { version = "0.52.0", features = ["Win32_Foundation", "Win32_System_Memory", "Win32_System_Threading", "Win32_System_WindowsProgramming", "Win32_System_Services", "Win32_Security", "Win32_System_ProcessStatus", "Win32_System_SystemInformation", "Win32_System_LibraryLoader", "Win32_System_Registry"] }
+winreg = "0.52.0"
+yoke = "0.7.1"
 
 [build-dependencies]
-winres = "0.1.12"
+embed-resource = "2.2.0"
 
 [package.metadata.winres]
 OriginalFilename = "gamebooster.exe"
@@ -37,3 +41,6 @@ LegalCopyright = "© 2024"
 FileDescription = "GameBooster - PC Optimizer for Gaming"
 ProductName = "GameBooster"
 ProductVersion = "1.1.0"
+
+[target."cfg(windows)".dependencies]
+winver = "1.0.0"

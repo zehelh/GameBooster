@@ -20,7 +20,7 @@ async fn execute_ram_cleaning() -> Result<String> {
             let freed = results.total_freed();
             Ok(format!("RAM cleaning completed. Freed: {} bytes", freed))
         }
-        Err(e) => Err(e),
+        Err(e) => Err(anyhow::anyhow!("RAM cleaning failed: {}", e)),
     }
 }
 

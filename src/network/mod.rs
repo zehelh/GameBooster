@@ -1,156 +1,120 @@
-// Network bandwidth limiting module
+//! # Network Module
+//!
+//! This module handles network-related functionalities, using a custom WinDivert wrapper
+//! to monitor and block network traffic from specific processes.
+
 pub mod process_monitor;
-pub mod bandwidth_control;
+mod windivert_wrapper;
 
-use anyhow::Result;
+use anyhow::{Result};
 use serde::{Deserialize, Serialize};
-use chrono::{DateTime, Local};
-use std::collections::HashMap;
+use std::collections::HashSet;
+use std::sync::{Arc, Mutex};
+use std::thread;
+use self::windivert_wrapper::{WinDivert};
+use tracing::{error, info};
+use crate::network::process_monitor::scan_network_processes as scan_processes;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+// Re-defining constants that were in the original crate's prelude
+const WINDIVERT_LAYER_NETWORK: i32 = 0;
+
+/// Represents a process with its network activity status.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct NetworkProcess {
     pub pid: u32,
     pub name: String,
-    pub executable_path: String,
-    pub bytes_sent: u64,
-    pub bytes_received: u64,
-    pub connections: u32,
-    pub is_windows_process: bool,
-    pub bandwidth_limit: Option<u64>, // bytes per second
     pub is_blocked: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NetworkLimitRule {
-    pub process_name: String,
-    pub limit_download: Option<u64>, // bytes per second
-    pub limit_upload: Option<u64>,   // bytes per second
-    pub is_blocked: bool,
-    pub created_at: DateTime<Local>,
-    pub enabled: bool,
+/// The main orchestrator for network operations using WinDivert.
+#[derive(Clone)]
+pub struct NetworkManager {
+    blocked_pids: Arc<Mutex<HashSet<u32>>>,
+    stop_flag: Arc<Mutex<bool>>,
+    pub processes: Vec<NetworkProcess>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NetworkLimitingResults {
-    pub start_time: DateTime<Local>,
-    pub end_time: Option<DateTime<Local>>,
-    pub rules_applied: u32,
-    pub processes_limited: u32,
-    pub processes_blocked: u32,
-    pub errors: Vec<String>,
-    pub is_completed: bool,
-}
-
-impl NetworkLimitingResults {
-    pub fn new() -> Self {
-        Self {
-            start_time: Local::now(),
-            end_time: None,
-            rules_applied: 0,
-            processes_limited: 0,
-            processes_blocked: 0,
-            errors: Vec::new(),
-            is_completed: false,
-        }
+impl NetworkManager {
+    /// Creates a new NetworkManager and starts the packet filtering thread.
+    pub fn new() -> Result<Self, String> {
+        let manager = Self {
+            blocked_pids: Arc::new(Mutex::new(HashSet::new())),
+            stop_flag: Arc::new(Mutex::new(false)),
+            processes: Vec::new(),
+        };
+        manager.start_filter_thread();
+        Ok(manager)
     }
 
-    pub fn complete(&mut self) {
-        self.end_time = Some(Local::now());
-        self.is_completed = true;
-    }
-}
+    fn start_filter_thread(&self) {
+        let blocked_pids_clone = self.blocked_pids.clone();
+        let stop_flag_clone = self.stop_flag.clone();
 
-pub struct NetworkLimiter {
-    active_rules: HashMap<String, NetworkLimitRule>,
-    monitored_processes: HashMap<u32, NetworkProcess>,
-}
+        thread::spawn(move || {
+            let windivert = match WinDivert::new() {
+                Ok(h) => h,
+                Err(e) => {
+                    error!("Failed to open WinDivert handle: {}", e);
+                    return;
+                }
+            };
+            
+            info!("WinDivert filter thread started successfully.");
 
-impl NetworkLimiter {
-    pub fn new() -> Self {
-        Self {
-            active_rules: HashMap::new(),
-            monitored_processes: HashMap::new(),
-        }
-    }
+            let mut packet = [0u8; 8192];
 
-    pub async fn scan_network_processes(&mut self) -> Result<Vec<NetworkProcess>> {
-        process_monitor::scan_network_processes().await
-    }
-
-    pub fn add_bandwidth_rule(&mut self, rule: NetworkLimitRule) {
-        self.active_rules.insert(rule.process_name.clone(), rule);
-    }
-
-    pub fn remove_bandwidth_rule(&mut self, process_name: &str) {
-        self.active_rules.remove(process_name);
-    }
-
-    pub async fn apply_network_limits(&mut self) -> Result<NetworkLimitingResults> {
-        let mut results = NetworkLimitingResults::new();
-
-        // Get current network processes
-        let processes = self.scan_network_processes().await?;
-        
-        for process in processes {
-            if let Some(rule) = self.active_rules.get(&process.name) {
-                if rule.enabled {
-                    if rule.is_blocked {
-                        // Block the process completely
-                        match bandwidth_control::block_process_network(&process.name).await {
-                            Ok(_) => {
-                                results.processes_blocked += 1;
-                                results.rules_applied += 1;
-                            }
-                            Err(e) => {
-                                results.errors.push(format!("Failed to block {}: {}", process.name, e));
+            while !*stop_flag_clone.lock().unwrap() {
+                if let Ok((packet_slice, addr)) = windivert.recv(&mut packet, None) {
+                    if let Some(pid) = addr.process_id() {
+                        let blocked = blocked_pids_clone.lock().unwrap().contains(&pid);
+                        if !blocked {
+                            if let Err(e) = windivert.send(packet_slice, &addr) {
+                                error!("Failed to resend packet: {}", e);
                             }
                         }
                     } else {
-                        // Apply bandwidth limits
-                        match bandwidth_control::limit_process_bandwidth(
-                            &process.name,
-                            rule.limit_download,
-                            rule.limit_upload,
-                        ).await {
-                            Ok(_) => {
-                                results.processes_limited += 1;
-                                results.rules_applied += 1;
-                            }
-                            Err(e) => {
-                                results.errors.push(format!("Failed to limit {}: {}", process.name, e));
-                            }
+                         if let Err(e) = windivert.send(packet_slice, &addr) {
+                            error!("Failed to resend packet (no PID): {}", e);
                         }
                     }
                 }
             }
+            info!("WinDivert filter thread stopped.");
+        });
+    }
+
+    pub async fn scan_network_processes(&mut self) -> Result<(), anyhow::Error> {
+        let process_infos = scan_processes().await?;
+        let blocked_pids = self.blocked_pids.lock().unwrap();
+        self.processes = process_infos
+            .into_iter()
+            .map(|info| NetworkProcess {
+                pid: info.pid,
+                name: info.name,
+                is_blocked: blocked_pids.contains(&info.pid),
+            })
+            .collect();
+        Ok(())
+    }
+
+    /// Updates the blocked status of a process.
+    /// This is now a simple, synchronous operation.
+    pub fn set_process_blocked(&self, pid: u32, blocked: bool) {
+        let mut blocked_pids = self.blocked_pids.lock().unwrap();
+        if blocked {
+            blocked_pids.insert(pid);
+        } else {
+            blocked_pids.remove(&pid);
         }
-
-        results.complete();
-        Ok(results)
     }
 
-    pub fn get_active_rules(&self) -> &HashMap<String, NetworkLimitRule> {
-        &self.active_rules
-    }
-
-    pub fn clear_all_rules(&mut self) {
-        self.active_rules.clear();
+    pub fn is_pid_blocked(&self, pid: u32) -> bool {
+        self.blocked_pids.lock().unwrap().contains(&pid)
     }
 }
 
-pub async fn get_network_usage_by_process() -> Result<Vec<NetworkProcess>> {
-    process_monitor::scan_network_processes().await
-}
-
-pub fn is_windows_system_process(process_name: &str) -> bool {
-    let windows_processes = vec![
-        "svchost.exe", "System", "Registry", "dwm.exe", "winlogon.exe",
-        "csrss.exe", "lsass.exe", "services.exe", "spoolsv.exe",
-        "explorer.exe", "taskhost.exe", "rundll32.exe", "dllhost.exe",
-        "msiexec.exe", "conhost.exe", "audiodg.exe", "wininit.exe",
-    ];
-
-    windows_processes.iter().any(|&sys_proc| 
-        process_name.to_lowercase().contains(&sys_proc.to_lowercase())
-    )
+impl Drop for NetworkManager {
+    fn drop(&mut self) {
+        *self.stop_flag.lock().unwrap() = true;
+    }
 }

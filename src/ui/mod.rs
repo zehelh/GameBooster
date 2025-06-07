@@ -1,2 +1,10 @@
 pub mod app;
-pub mod icons; 
+pub mod disk_ui;
+pub mod memory_ui;
+pub mod network_ui;
+pub mod services_ui;
+pub mod scheduler_ui;
+pub mod settings_ui;
+pub mod util;
+pub mod icons;
+pub mod tabs; 

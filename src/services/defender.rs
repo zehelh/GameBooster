@@ -1,156 +1,135 @@
 // Windows Defender management
 
 use anyhow::Result;
-use std::process::Command;
-use chrono::{DateTime, Local, Duration};
-use serde::{Deserialize, Serialize};
+use crate::services::winapi_defender::DefenderManager;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default)]
 pub struct DefenderStatus {
     pub real_time_protection: bool,
     pub cloud_protection: bool,
     pub automatic_sample_submission: bool,
     pub tamper_protection: bool,
-    pub last_check: DateTime<Local>,
+    pub status_text: String,
+    pub last_operation_results: Vec<String>,
 }
 
-impl DefenderStatus {
-    pub fn check_current_status() -> Result<Self> {
-        // Use PowerShell to check Windows Defender status
-        let output = Command::new("powershell")
-            .args(&["-Command", "Get-MpPreference | Select-Object DisableRealtimeMonitoring, MAPSReporting, SubmitSamplesConsent"])
-            .output()?;
+pub struct DefenderService;
 
-        let output_str = String::from_utf8_lossy(&output.stdout);
-        
-        // Parse the output to determine status
-        let real_time_disabled = output_str.contains("DisableRealtimeMonitoring : True");
-        let cloud_disabled = output_str.contains("MAPSReporting : 0");
-        let samples_disabled = output_str.contains("SubmitSamplesConsent : 0");
-        
-        Ok(Self {
-            real_time_protection: !real_time_disabled,
-            cloud_protection: !cloud_disabled,
-            automatic_sample_submission: !samples_disabled,
-            tamper_protection: false, // Default to false, would need additional check
-            last_check: Local::now(),
-        })
-    }
-}
+impl DefenderService {
+    /// Check current Defender status with detailed information
+    pub fn get_status() -> Result<DefenderStatus> {
+        match DefenderManager::check_defender_status() {
+            Ok(status) => {
+                let mut defender_status = DefenderStatus {
+                    real_time_protection: status.real_time_protection,
+                    cloud_protection: status.cloud_protection,
+                    automatic_sample_submission: status.automatic_sample_submission,
+                    tamper_protection: status.tamper_protection,
+                    status_text: if status.real_time_protection {
+                        "🛡️ Actif - Protection en temps réel".to_string()
+                    } else {
+                        "❌ Désactivé - Protection arrêtée".to_string()
+                    },
+                    last_operation_results: Vec::new(),
+                };
 
-pub async fn disable_defender_temporarily() -> Result<bool> {
-    // This is a very sensitive operation that should only be done with explicit user consent
-    // and clear warnings about security implications
-    
-    // Check if running as administrator
-    if !is_elevated::is_elevated() {
-        return Err(anyhow::anyhow!("Administrator privileges required to modify Windows Defender"));
-    }
+                // Add detailed status info
+                let mut details = Vec::new();
+                if status.real_time_protection {
+                    details.push("Protection temps réel: ✅ ACTIVE".to_string());
+                } else {
+                    details.push("Protection temps réel: ❌ INACTIVE".to_string());
+                }
 
-    // Disable real-time protection temporarily
-    let result = Command::new("powershell")
-        .args(&["-Command", "Set-MpPreference -DisableRealtimeMonitoring $true"])
-        .output();
+                if status.tamper_protection {
+                    details.push("Protection falsification: 🔒 VERROUILLÉE".to_string());
+                } else {
+                    details.push("Protection falsification: 🔓 DÉVERROUILLÉE".to_string());
+                }
 
-    match result {
-        Ok(output) => {
-            if output.status.success() {
-                Ok(true)
-            } else {
-                let error = String::from_utf8_lossy(&output.stderr);
-                Err(anyhow::anyhow!("Failed to disable Defender: {}", error))
+                if status.cloud_protection {
+                    details.push("Protection cloud: ☁️ ACTIVE".to_string());
+                } else {
+                    details.push("Protection cloud: ❌ INACTIVE".to_string());
+                }
+
+                defender_status.last_operation_results = details;
+                Ok(defender_status)
+            }
+            Err(e) => {
+                Ok(DefenderStatus {
+                    status_text: format!("❓ Statut inconnu: {}", e),
+                    last_operation_results: vec![format!("Erreur de vérification: {}", e)],
+                    ..Default::default()
+                })
             }
         }
-        Err(e) => Err(anyhow::anyhow!("Command execution failed: {}", e)),
-    }
-}
-
-pub async fn enable_defender() -> Result<bool> {
-    // Re-enable Windows Defender
-    if !is_elevated::is_elevated() {
-        return Err(anyhow::anyhow!("Administrator privileges required to modify Windows Defender"));
     }
 
-    let result = Command::new("powershell")
-        .args(&["-Command", "Set-MpPreference -DisableRealtimeMonitoring $false"])
-        .output();
-
-    match result {
-        Ok(output) => {
-            if output.status.success() {
-                Ok(true)
-            } else {
-                let error = String::from_utf8_lossy(&output.stderr);
-                Err(anyhow::anyhow!("Failed to enable Defender: {}", error))
-            }
+    /// Disable Defender immediately with detailed feedback
+    pub fn disable_immediately() -> Result<DefenderStatus> {
+        let results = DefenderManager::disable_defender_immediately()?;
+        
+        // Wait a moment for changes to take effect
+        std::thread::sleep(std::time::Duration::from_millis(2000));
+        
+        let mut status = Self::get_status().unwrap_or_default();
+        status.last_operation_results = results;
+        
+        // Update status text based on results
+        if !status.real_time_protection {
+            status.status_text = "🎉 DÉSACTIVÉ - Toutes protections arrêtées".to_string();
+        } else {
+            status.status_text = "⚠️ PARTIELLEMENT DÉSACTIVÉ - Vérifiez les résultats".to_string();
         }
-        Err(e) => Err(anyhow::anyhow!("Command execution failed: {}", e)),
+        
+        Ok(status)
+    }
+
+    /// Enable Defender immediately with detailed feedback
+    pub fn enable_immediately() -> Result<DefenderStatus> {
+        let results = DefenderManager::enable_defender_immediately()?;
+        
+        // Wait a moment for changes to take effect
+        std::thread::sleep(std::time::Duration::from_millis(2000));
+        
+        let mut status = Self::get_status().unwrap_or_default();
+        status.last_operation_results = results;
+        
+        // Update status text based on results
+        if status.real_time_protection {
+            status.status_text = "🛡️ RÉACTIVÉ - Protection restaurée".to_string();
+        } else {
+            status.status_text = "⚠️ RÉACTIVATION PARTIELLE - Redémarrage possible requis".to_string();
+        }
+        
+        Ok(status)
+    }
+
+    /// Quick status check (lighter than full get_status)
+    pub fn is_active() -> bool {
+        Self::get_status()
+            .map(|s| s.real_time_protection)
+            .unwrap_or(true) // Default to active if can't check
     }
 }
+
+/*
+// Ces fonctions utilisant Command sont commentées car elles ne sont pas utilisées
+// et on veut éviter les outils externes
 
 pub async fn schedule_defender_reactivation(hours: u32) -> Result<()> {
-    // Schedule automatic re-activation of Windows Defender after specified hours
-    // This could be implemented using Windows Task Scheduler
-    
-    let command = format!(
-        "schtasks /create /tn \"GameBooster_DefenderReactivation\" /tr \"powershell.exe -Command 'Set-MpPreference -DisableRealtimeMonitoring $false'\" /sc once /st {}",
-        (Local::now() + Duration::hours(hours as i64)).format("%H:%M")
-    );
-
-    let result = Command::new("cmd")
-        .args(&["/C", &command])
-        .output();
-
-    match result {
-        Ok(output) => {
-            if output.status.success() {
-                Ok(())
-            } else {
-                let error = String::from_utf8_lossy(&output.stderr);
-                Err(anyhow::anyhow!("Failed to schedule reactivation: {}", error))
-            }
-        }
-        Err(e) => Err(anyhow::anyhow!("Command execution failed: {}", e)),
-    }
+    // TODO: Implémenter via l'API Windows Task Scheduler au lieu de Command
+    Err(anyhow!("Scheduler functionality not yet implemented via Registry API"))
 }
 
 pub fn get_defender_exclusions() -> Result<Vec<String>> {
-    // Get current exclusions list
-    let output = Command::new("powershell")
-        .args(&["-Command", "Get-MpPreference | Select-Object -ExpandProperty ExclusionPath"])
-        .output()?;
-
-    let output_str = String::from_utf8_lossy(&output.stdout);
-    let exclusions: Vec<String> = output_str
-        .lines()
-        .filter(|line| !line.trim().is_empty())
-        .map(|line| line.trim().to_string())
-        .collect();
-
-    Ok(exclusions)
+    // TODO: Implémenter via l'API Registry au lieu de PowerShell
+    Err(anyhow!("Exclusions reading not yet implemented via Registry API"))
 }
 
 pub fn add_exclusion_path(path: &str) -> Result<()> {
-    // Add a path to Windows Defender exclusions
-    if !is_elevated::is_elevated() {
-        return Err(anyhow::anyhow!("Administrator privileges required"));
-    }
-
-    let command = format!("Add-MpPreference -ExclusionPath '{}'", path);
-    
-    let result = Command::new("powershell")
-        .args(&["-Command", &command])
-        .output();
-
-    match result {
-        Ok(output) => {
-            if output.status.success() {
-                Ok(())
-            } else {
-                let error = String::from_utf8_lossy(&output.stderr);
-                Err(anyhow::anyhow!("Failed to add exclusion: {}", error))
-            }
-        }
-        Err(e) => Err(anyhow::anyhow!("Command execution failed: {}", e)),
-    }
+    // TODO: Implémenter via l'API Registry au lieu de PowerShell
+    Err(anyhow!("Exclusions management not yet implemented via Registry API"))
 }
+*/ 

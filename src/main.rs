@@ -1,48 +1,55 @@
-use anyhow::Result;
-use eframe::egui::{self, Vec2};
-use crate::ui::icons::create_app_icon;
-use crate::ui::app::CleanRamApp as UiCleanRamApp;
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-// Importation des modules
 mod disk;
 mod memory;
+mod network;
+mod os_info;
 mod scheduler;
 mod services;
+mod theme;
 mod ui;
-mod utils;
 
-// Logos intégrés en tant que ressources
+use crate::ui::app::CleanRamApp;
+use eframe::egui;
+use tracing::info;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
 const LOGO_BYTES: &[u8] = include_bytes!("../img/logo.png");
 const RAM_ICON_BYTES: &[u8] = include_bytes!("../img/ram.png");
 
-fn main() -> Result<(), eframe::Error> {
-    // Vérification des droits administrateur
-    let is_admin = is_elevated::is_elevated();
-    if !is_admin {
-        println!("Attention: L'application fonctionne mieux avec des droits administrateur.");
-        // Continuer quand même, l'interface affichera un avertissement
-    }
-    
-    // Options de l'application
-    let options = eframe::NativeOptions {
+fn main() {
+    let _guard = setup_logging();
+
+    info!("Initializing GameBooster application...");
+
+    let native_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_inner_size(Vec2::new(500.0, 600.0)) // Adjusted for potentially less content
-            .with_min_inner_size(Vec2::new(400.0, 300.0))
-            .with_icon(create_app_icon(LOGO_BYTES)),
-        centered: true,
-        default_theme: eframe::Theme::Dark,
-        follow_system_theme: false,
-        hardware_acceleration: eframe::HardwareAcceleration::Preferred,
-        vsync: true,
+            .with_inner_size([1024.0, 768.0])
+            .with_min_inner_size([800.0, 600.0]),
         ..Default::default()
     };
-      // Démarrer l'application
+
+    info!("Starting eframe::run_native...");
     eframe::run_native(
-        "GameBooster - Optimiseur PC Gaming",
-        options,
-        Box::new(|cc| {
-            // Utiliser la version du module ui::app
-            Box::new(UiCleanRamApp::new(cc, LOGO_BYTES, RAM_ICON_BYTES))
-        }),
+        "GameBooster",
+        native_options,
+        Box::new(|cc| Box::new(CleanRamApp::new(cc))),
     )
+    .expect("eframe::run_native failed");
+    info!("eframe::run_native finished. Application is closing.");
+}
+
+fn setup_logging() -> Option<tracing_appender::non_blocking::WorkerGuard> {
+    if std::fs::create_dir_all("logs").is_ok() {
+        let file_appender = tracing_appender::rolling::daily("logs", "app.log");
+        let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
+        tracing_subscriber::registry()
+            .with(tracing_subscriber::fmt::layer().with_writer(non_blocking))
+            .init();
+        Some(guard)
+    } else {
+        // Fallback to console if directory creation fails
+        tracing_subscriber::fmt::init();
+        None
+    }
 }
