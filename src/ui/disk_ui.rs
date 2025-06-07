@@ -1,6 +1,7 @@
 use eframe::egui;
 use egui::ProgressBar;
 use crate::ui::app::CleanRamApp;
+use poll_promise::Promise;
 
 pub fn draw_disk_tab(app: &mut CleanRamApp, ui: &mut egui::Ui) {
     ui.heading("💾 Nettoyage de Disque");
@@ -38,21 +39,42 @@ pub fn draw_disk_tab(app: &mut CleanRamApp, ui: &mut egui::Ui) {
 
     ui.horizontal(|ui| {
         if ui.add_enabled(!is_busy, egui::Button::new("🔍 Aperçu")).clicked() {
-            // Simulation d'un aperçu
-            ui.label("Fonctionnalité d'aperçu à implémenter...");
+            // Lance l'aperçu en arrière-plan
+            let options = app.disk_options.clone();
+            app.disk_cleaning_promise = Some(Promise::spawn_thread("disk_scan", move || {
+                match crate::disk::scan_disk_with_options(options) {
+                    Ok(results) => results,
+                    Err(_) => crate::disk::DiskCleaningResults::new(), // Résultat vide en cas d'erreur
+                }
+            }));
         }
 
         if ui.add_enabled(!is_busy, egui::Button::new("🧹 Nettoyer")).clicked() {
-            // Simulation du nettoyage
-            ui.label("Nettoyage lancé ! (simulation)");
+            // Lance le nettoyage en arrière-plan  
+            let options = app.disk_options.clone();
+            app.disk_cleaning_promise = Some(Promise::spawn_thread("disk_clean", move || {
+                match tokio::runtime::Runtime::new().unwrap().block_on(async {
+                    crate::disk::clean_disk_with_options(options).await
+                }) {
+                    Ok(results) => results,
+                    Err(_) => crate::disk::DiskCleaningResults::new(), // Résultat vide en cas d'erreur
+                }
+            }));
         }
     });
 
-    // Barre de progression
-    if is_busy {
-        ui.separator();
-        ui.label("🔄 Nettoyage en cours...");
-        ui.add(ProgressBar::new(0.5).show_percentage());
+    // Gestion des promises et barre de progression
+    if let Some(promise) = &app.disk_cleaning_promise {
+        if let Some(result) = promise.ready() {
+            // Promise terminée, récupère le résultat directement
+            app.last_disk_cleaned_results = Some(result.clone());
+            app.disk_cleaning_promise = None; // Nettoie la promise
+        } else {
+            // En cours d'exécution
+            ui.separator();
+            ui.label("🔄 Opération en cours...");
+            ui.add(ProgressBar::new(0.5).show_percentage());
+        }
     }
 
     // Résultats
