@@ -4,12 +4,11 @@
 use anyhow::{Result, anyhow};
 use std::ffi::CString;
 use std::ptr;
-use windows_sys::Win32::Security::SC_HANDLE;
 use windows_sys::Win32::System::Services::{
     CloseServiceHandle, OpenSCManagerA, OpenServiceA, QueryServiceStatus,
     SC_MANAGER_ALL_ACCESS, SERVICE_QUERY_STATUS, SERVICE_STATUS, SERVICE_STOPPED,
     SERVICE_START_PENDING, SERVICE_STOP_PENDING, SERVICE_RUNNING, SERVICE_CONTINUE_PENDING,
-    SERVICE_PAUSE_PENDING, SERVICE_PAUSED,
+    SERVICE_PAUSE_PENDING, SERVICE_PAUSED, SC_HANDLE,
 };
 
 pub struct ServiceManager;
@@ -23,7 +22,7 @@ impl ServiceManager {
                 ptr::null(),
                 SC_MANAGER_ALL_ACCESS,
             );
-            if scm_handle == 0 {
+            if scm_handle == std::ptr::null_mut() {
                 Err(anyhow!("Could not open SCM"))
             } else {
                 Ok(scm_handle)
@@ -40,7 +39,7 @@ impl ServiceManager {
                 service_name_c.as_ptr() as *const u8,
                 access,
             );
-            if service_handle == 0 {
+            if service_handle == std::ptr::null_mut() {
                 Err(anyhow!("Could not open service {}", service_name))
             } else {
                 Ok(service_handle)

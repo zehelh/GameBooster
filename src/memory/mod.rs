@@ -106,13 +106,13 @@ pub fn clean_memory() -> Result<CleaningResults> {
                 pid,
             )
         };
-        if handle != 0 {
+        if handle != std::ptr::null_mut() {
             // Essayer d'obtenir le nom du processus
             let mut name_buffer = [0u16; MAX_PATH as usize];
             let name_len = unsafe {
                 GetModuleBaseNameW(
                     handle,
-                    0,
+                    std::ptr::null_mut(),
                     name_buffer.as_mut_ptr(),
                     MAX_PATH,
                 )

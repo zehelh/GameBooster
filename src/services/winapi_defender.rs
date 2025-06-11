@@ -89,7 +89,7 @@ impl DefenderManager {
     /// Read a DWORD value from the Policy registry key  
     fn _get_policy_setting(value_name: &str) -> Result<Option<u32>> {
         unsafe {
-            let mut key: HKEY = 0;
+            let mut key: HKEY = std::ptr::null_mut();
             let registry_path =
                 CString::new(Self::POLICY_REGISTRY_PATH).map_err(|e| anyhow!(e))?;
 
@@ -139,7 +139,7 @@ impl DefenderManager {
     /// Returns Ok(None) if the value doesn't exist.
     fn _get_defender_setting(value_name: &str) -> Result<Option<u32>> {
         unsafe {
-            let mut key: HKEY = 0;
+            let mut key: HKEY = std::ptr::null_mut();
             let registry_path =
                 CString::new(Self::DEFENDER_REGISTRY_PATH).map_err(|e| anyhow!(e))?;
 
@@ -189,7 +189,7 @@ impl DefenderManager {
     /// Read a DWORD value from the Features registry key
     fn _get_features_setting(value_name: &str) -> Result<Option<u32>> {
         unsafe {
-            let mut key: HKEY = 0;
+            let mut key: HKEY = std::ptr::null_mut();
             let registry_path =
                 CString::new(Self::FEATURES_REGISTRY_PATH).map_err(|e| anyhow!(e))?;
 
@@ -340,7 +340,7 @@ impl DefenderManager {
                 SC_MANAGER_ALL_ACCESS,
             );
 
-            if scm == 0 {
+            if scm == std::ptr::null_mut() {
                 return Err(anyhow!("Failed to open Service Control Manager"));
             }
 
@@ -348,7 +348,7 @@ impl DefenderManager {
             let service_name_cstr = CString::new(service_name).map_err(|e| anyhow!(e))?;
             let service = OpenServiceA(scm, service_name_cstr.as_ptr() as *const u8, SERVICE_STOP);
 
-            if service == 0 {
+            if service == std::ptr::null_mut() {
                 CloseServiceHandle(scm);
                 return Err(anyhow!("Failed to open service {}", service_name));
             }
@@ -498,14 +498,14 @@ impl DefenderManager {
                 SC_MANAGER_ALL_ACCESS,
             );
 
-            if scm == 0 {
+            if scm == std::ptr::null_mut() {
                 return Err(anyhow!("Failed to open Service Control Manager"));
             }
 
             let service_name_cstr = CString::new(service_name).map_err(|e| anyhow!(e))?;
             let service = OpenServiceA(scm, service_name_cstr.as_ptr() as *const u8, SERVICE_ALL_ACCESS);
 
-            if service == 0 {
+            if service == std::ptr::null_mut() {
                 CloseServiceHandle(scm);
                 return Err(anyhow!("Failed to open service {}", service_name));
             }
@@ -787,7 +787,7 @@ pause
         let registry_path = format!("SYSTEM\\CurrentControlSet\\Services\\{}", service_name);
         
         unsafe {
-            let mut key: HKEY = 0;
+            let mut key: HKEY = std::ptr::null_mut();
             let path_cstr = CString::new(registry_path).map_err(|e| anyhow!(e))?;
 
             let result = RegCreateKeyExA(
@@ -912,7 +912,7 @@ pause
     /// Sets a DWORD value in the Features registry key.
     fn _set_features_setting(value_name: &str, value: u32) -> Result<()> {
         unsafe {
-            let mut key: HKEY = 0;
+            let mut key: HKEY = std::ptr::null_mut();
             let registry_path =
                 CString::new(Self::FEATURES_REGISTRY_PATH).map_err(|e| anyhow!(e))?;
 
@@ -964,7 +964,7 @@ pause
     /// Sets a DWORD value in the SpyNet registry key.
     fn _set_spynet_setting(value_name: &str, value: u32) -> Result<()> {
         unsafe {
-            let mut key: HKEY = 0;
+            let mut key: HKEY = std::ptr::null_mut();
             let registry_path =
                 CString::new(Self::SPYNET_REGISTRY_PATH).map_err(|e| anyhow!(e))?;
 
@@ -1016,7 +1016,7 @@ pause
     /// Sets a DWORD value in the Scan registry key.
     fn _set_scan_setting(value_name: &str, value: u32) -> Result<()> {
         unsafe {
-            let mut key: HKEY = 0;
+            let mut key: HKEY = std::ptr::null_mut();
             let registry_path =
                 CString::new(Self::SCAN_REGISTRY_PATH).map_err(|e| anyhow!(e))?;
 
@@ -1070,7 +1070,7 @@ pause
         const SERVICE_REGISTRY_PATH: &str = "SYSTEM\\CurrentControlSet\\Services\\WinDefend";
         
         unsafe {
-            let mut key: HKEY = 0;
+            let mut key: HKEY = std::ptr::null_mut();
             let registry_path = CString::new(SERVICE_REGISTRY_PATH).map_err(|e| anyhow!(e))?;
 
             let result = RegCreateKeyExA(
@@ -1121,7 +1121,7 @@ pause
     /// Sets a DWORD value in the main Defender registry key.
     fn _set_defender_main_setting(value_name: &str, value: u32) -> Result<()> {
         unsafe {
-            let mut key: HKEY = 0;
+            let mut key: HKEY = std::ptr::null_mut();
             let registry_path =
                 CString::new(Self::DEFENDER_REGISTRY_PATH).map_err(|e| anyhow!(e))?;
 
@@ -1173,7 +1173,7 @@ pause
     /// Deletes a value from the main Defender registry key.
     fn _delete_defender_main_setting(value_name: &str) -> Result<bool> {
         unsafe {
-            let mut key: HKEY = 0;
+            let mut key: HKEY = std::ptr::null_mut();
             let registry_path =
                 CString::new(Self::DEFENDER_REGISTRY_PATH).map_err(|e| anyhow!(e))?;
 
@@ -1219,7 +1219,7 @@ pause
         }
 
         unsafe {
-            let mut key: HKEY = 0;
+            let mut key: HKEY = std::ptr::null_mut();
             let registry_path =
                 CString::new(Self::POLICY_REGISTRY_PATH).map_err(|e| anyhow!(e))?;
 
@@ -1277,7 +1277,7 @@ pause
         }
 
         unsafe {
-            let mut key: HKEY = 0;
+            let mut key: HKEY = std::ptr::null_mut();
             let registry_path =
                 CString::new(Self::POLICY_REGISTRY_PATH).map_err(|e| anyhow!(e))?;
 
@@ -1317,7 +1317,7 @@ pause
     /// Check if the current process is running with elevated privileges
     fn is_elevated() -> bool {
         unsafe {
-            let mut token: HANDLE = 0;
+            let mut token: HANDLE = std::ptr::null_mut();
             if OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &mut token) == 0 {
                 return false;
             }

@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use crate::disk::{DiskCleaningOptions, DiskCleaningResults};
 use crate::memory::CleaningResults;
 use crate::services::defender::DefenderStatus;
+use crate::network::NetworkLimiter;
 
 use eframe::egui;
 // use image::load_from_memory; // Temporairement désactivé pour éviter les crashes
@@ -41,6 +42,9 @@ pub struct CleanRamApp {
     pub logo: egui::TextureId,
     pub ram_icon: egui::TextureId,
     pub is_first_frame: bool,
+    pub network_limiter: Option<NetworkLimiter>,
+    pub process_search_text: String,
+    pub speed_limit_input: String,
 }
 
 impl CleanRamApp {
@@ -55,7 +59,17 @@ impl CleanRamApp {
         // Créer des textures simples sans charger d'images pour éviter les crashes
         let dummy_texture_id = egui::TextureId::default();
         
-        // Network manager initialization commented out for simplification
+        // Network manager initialization
+        let network_limiter = match crate::network::NetworkLimiter::new() {
+            Ok(limiter) => {
+                tracing::info!("✅ Gestionnaire réseau QoS initialisé");
+                Some(limiter)
+            }
+            Err(e) => {
+                tracing::error!("❌ Échec initialisation gestionnaire réseau: {}", e);
+                None
+            }
+        };
 
         Self {
             active_tab: Tab::Memory,
@@ -74,6 +88,139 @@ impl CleanRamApp {
             logo: dummy_texture_id,
             ram_icon: dummy_texture_id,
             is_first_frame: true,
+            network_limiter,
+            process_search_text: String::new(),
+            speed_limit_input: "1.0".to_string(),
+        }
+    }
+
+    pub fn update_network_scan(&mut self) {
+        if let Some(ref mut limiter) = self.network_limiter {
+            match limiter.scan_network_processes() {
+                Ok(()) => {
+                    tracing::info!("✅ Scan réseau terminé - données temps réel");
+                }
+                Err(e) => {
+                    tracing::error!("❌ Erreur scan réseau: {}", e);
+                }
+            }
+        }
+    }
+
+    pub fn scan_network_processes(&mut self) {
+        tracing::info!("🔄 Scan réseau demandé");
+        self.update_network_scan();
+    }
+
+    pub fn limit_process(&mut self, pid: u32) {
+        tracing::info!("🎯 Début limitation processus PID {}", pid);
+        
+        if let Some(ref mut limiter) = self.network_limiter {
+            // Vérifier si le processus existe dans le scan
+            let process_exists = limiter.get_processes().iter().any(|p| p.pid == pid);
+            if !process_exists {
+                tracing::warn!("⚠️ Processus PID {} non trouvé dans le scan réseau", pid);
+                return;
+            }
+            
+            let limit_mbps = match crate::network::parse_speed_limit_mbps(&self.speed_limit_input) {
+                Ok(mbps) => {
+                    tracing::info!("📊 Limitation parse: {} MB/s → OK", mbps);
+                    mbps
+                },
+                Err(e) => {
+                    tracing::error!("❌ Format de limitation invalide '{}': {}", self.speed_limit_input, e);
+                    return;
+                }
+            };
+            
+            let limit_kbps = (limit_mbps * 1024.0) as u32;
+            tracing::info!("🔢 Conversion: {:.1} MB/s → {} KB/s", limit_mbps, limit_kbps);
+            
+            match limiter.set_process_speed_limit(pid, limit_kbps) {
+                Ok(()) => {
+                    tracing::info!("✅ Limitation QoS appliquée: PID {} → {:.1} MB/s ({} KB/s)", pid, limit_mbps, limit_kbps);
+                    
+                    // Vérifier immédiatement si la politique a été créée
+                    match limiter.verify_qos_policies() {
+                        Ok(policies) => {
+                            let policy_count = policies.len();
+                            tracing::info!("📋 Vérification: {} politiques QoS trouvées après création", policy_count);
+                            
+                            // Chercher notre politique spécifique
+                            let our_policy_name = format!("GameBooster_Limit_{}", pid);
+                            let found = policies.iter().any(|p| p.name == our_policy_name);
+                            if found {
+                                tracing::info!("✅ Politique {} confirmée active", our_policy_name);
+                            } else {
+                                tracing::warn!("⚠️ Politique {} non trouvée dans la liste active", our_policy_name);
+                            }
+                        }
+                        Err(e) => {
+                            tracing::warn!("⚠️ Impossible de vérifier les politiques: {}", e);
+                        }
+                    }
+                }
+                Err(e) => {
+                    tracing::error!("❌ Échec limitation QoS PID {}: {}", pid, e);
+                }
+            }
+        } else {
+            tracing::error!("❌ NetworkLimiter non initialisé pour PID {}", pid);
+        }
+    }
+
+    pub fn remove_process_limit(&mut self, pid: u32) {
+        if let Some(ref mut limiter) = self.network_limiter {
+            match limiter.remove_process_limit(pid) {
+                Ok(()) => {
+                    tracing::info!("✅ Limitation supprimée: PID {}", pid);
+                }
+                Err(e) => {
+                    tracing::error!("❌ Échec suppression limitation PID {}: {}", pid, e);
+                }
+            }
+        }
+    }
+
+    pub fn apply_speed_limit_to_selected(&mut self) {
+        let selected_pids: Vec<u32> = self.processes.iter().copied().collect();
+        
+        for pid in selected_pids {
+            self.limit_process(pid);
+        }
+        
+        if !self.processes.is_empty() {
+            tracing::info!("✅ Limitation appliquée à {} processus sélectionnés", self.processes.len());
+        }
+    }
+
+    pub fn select_all_processes(&mut self) {
+        if let Some(ref limiter) = self.network_limiter {
+            self.processes.clear();
+            for process in limiter.get_processes() {
+                self.processes.insert(process.pid);
+            }
+            tracing::info!("✅ {} processus sélectionnés", self.processes.len());
+        }
+    }
+
+    pub fn deselect_all_processes(&mut self) {
+        let count = self.processes.len();
+        self.processes.clear();
+        tracing::info!("✅ {} processus désélectionnés", count);
+    }
+
+    pub fn clear_all_network_limits(&mut self) {
+        if let Some(ref mut limiter) = self.network_limiter {
+            match limiter.clear_all_limits() {
+                Ok(()) => {
+                    tracing::info!("✅ Toutes les limitations supprimées");
+                }
+                Err(e) => {
+                    tracing::error!("❌ Échec suppression globale: {}", e);
+                }
+            }
         }
     }
 }

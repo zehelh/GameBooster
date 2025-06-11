@@ -2,45 +2,61 @@
 name = "gamebooster"
 version = "1.1.0"
 edition = "2021"
+authors = ["Votre Nom <votre.email@example.com>"]
+description = "Game Booster - Optimiseur de performances Windows avec limitation réseau QoS"
+build = "build.rs"
+
+# UNIQUEMENT des builds release avec optimisations maximales
+[profile.dev]
+opt-level = 3
+debug = false
+overflow-checks = false
+lto = "thin"
+panic = "abort"
+
+[profile.release]
+opt-level = 3
+debug = false
+strip = true
+lto = true
+codegen-units = 1
+panic = "abort"
+overflow-checks = false
 
 [dependencies]
+eframe = { version = "0.25", default-features = false, features = ["accesskit", "default_fonts", "glow", "persistence"] }
+egui = "0.25"
+egui_extras = "0.25"
+image = "0.24"
 anyhow = "1.0"
-async-process = "2.3.0"
-chrono = { version = "0.4", features = ["serde"] }
-eframe = { version = "0.27.2", features = ["persistence"] }
-egui = "0.27.2"
-egui_extras = { version = "0.27.2", features = ["image"] }
-image = "0.25.1"
-is_elevated = "0.1.2"
-poll-promise = "0.3.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+env_logger = "0.10"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-smol = "2.0.0"
-sys-info = "0.9"
-sysinfo = "0.30.13"
-thiserror = "1.0.63"
-tokio = { version = "1.39.2", features = ["full"] }
-tracing = "0.1.40"
-tracing-appender = "0.2.3"
-tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
-walkdir = "2.5.0"
-web-time = "0.2.0"
-webbrowser = "0.8.15"
-winapi = { version = "0.3.9", features = ["winuser", "processthreadsapi", "handleapi", "memoryapi"] }
-windows = { version = "0.52.0", features = ["Win32_Foundation", "Win32_Security", "Win32_System_Diagnostics_Debug", "Win32_System_Threading", "Win32_UI_WindowsAndMessaging"] }
-windows-sys = { version = "0.52.0", features = ["Win32_Foundation", "Win32_System_Memory", "Win32_System_Threading", "Win32_System_WindowsProgramming", "Win32_System_Services", "Win32_Security", "Win32_System_ProcessStatus", "Win32_System_SystemInformation", "Win32_System_LibraryLoader", "Win32_System_Registry"] }
-winreg = "0.52.0"
-yoke = "0.7.1"
+tokio = { version = "1", features = ["full"] }
+sysinfo = "0.30"
+poll-promise = "0.3"
+walkdir = "2.4"
+chrono = { version = "0.4", features = ["serde"] }
+windows-sys = { version = "0.59", features = [
+    "Win32_Foundation",
+    "Win32_System_ProcessStatus", 
+    "Win32_System_SystemInformation",
+    "Win32_System_Threading",
+    "Win32_System_Registry",
+    "Win32_System_Services",
+    "Win32_Security"
+] }
+thiserror = "1.0"
+async-process = "2.3"
+tracing-appender = "0.2"
 
-[build-dependencies]
-embed-resource = "2.2.0"
-
-[package.metadata.winres]
-OriginalFilename = "gamebooster.exe"
-LegalCopyright = "© 2024"
-FileDescription = "GameBooster - PC Optimizer for Gaming"
-ProductName = "GameBooster"
-ProductVersion = "1.1.0"
-
-[target."cfg(windows)".dependencies]
-winver = "1.0.0"
+# Windows APIs (surveillances réseau + QoS)
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = [
+    "winuser", "winsvc", "winnt", "processthreadsapi", "psapi", "handleapi",
+    "shellapi", "winreg", "ntdef", "ntstatus", "lmcons",
+    "securitybaseapi", "accctrl", "aclapi", "errhandlingapi", "fileapi",
+    "libloaderapi", "memoryapi", "sysinfoapi", "tcpmib", "iphlpapi"
+] }
