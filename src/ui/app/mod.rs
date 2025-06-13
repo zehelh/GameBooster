@@ -18,7 +18,7 @@ use crate::theme;
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub enum Tab {
     Memory,
-    Hdd,
+    Optimization, // Renamed from Hdd
     Services,
     Scheduler,
     Network,
@@ -62,14 +62,18 @@ impl CleanRamApp {
         // Network manager initialization
         let network_limiter = match crate::network::NetworkLimiter::new() {
             Ok(limiter) => {
-                tracing::info!("✅ Gestionnaire réseau QoS initialisé");
+                tracing::info!("✅ Network manager QoS initialized");
                 Some(limiter)
             }
             Err(e) => {
-                tracing::error!("❌ Échec initialisation gestionnaire réseau: {}", e);
+                tracing::error!("❌ Failed to initialize network manager: {}", e);
                 None
             }
         };
+
+        let detected_os_version = crate::os_info::get_windows_version_string();
+        tracing::info!("Detected OS Version on startup (tracing): {}", detected_os_version);
+        println!("Detected OS Version on startup (println): {}", detected_os_version); // Added for direct console output
 
         Self {
             active_tab: Tab::Memory,
@@ -84,7 +88,7 @@ impl CleanRamApp {
             defender_status_promise: None,
             defender_action_promise: None,
             last_defender_status: None,
-            windows_version_string: format!("Windows {}", env!("CARGO_PKG_VERSION")),
+            windows_version_string: detected_os_version, // Use the logged version
             logo: dummy_texture_id,
             ram_icon: dummy_texture_id,
             is_first_frame: true,
@@ -234,8 +238,8 @@ impl eframe::App for CleanRamApp {
                 if ui.selectable_label(self.active_tab == Tab::Memory, "🧠 Mémoire").clicked() {
                     self.active_tab = Tab::Memory;
                 }
-                if ui.selectable_label(self.active_tab == Tab::Hdd, "💾 Disque").clicked() {
-                    self.active_tab = Tab::Hdd;
+                if ui.selectable_label(self.active_tab == Tab::Optimization, "⚙️ Optimisation").clicked() { // Renamed from Hdd and "💾 Disque"
+                    self.active_tab = Tab::Optimization;
                 }
                 if ui.selectable_label(self.active_tab == Tab::Services, "🛡️ Services").clicked() {
                     self.active_tab = Tab::Services;
@@ -243,7 +247,7 @@ impl eframe::App for CleanRamApp {
                 if ui.selectable_label(self.active_tab == Tab::Scheduler, "⏰ Planificateur").clicked() {
                     self.active_tab = Tab::Scheduler;
                 }
-                if ui.selectable_label(self.active_tab == Tab::Network, "🌐 Réseau").clicked() {
+                if ui.selectable_label(self.active_tab == Tab::Network, "📡 Réseau").clicked() { // Changed icon from 🌐 to 📡
                     self.active_tab = Tab::Network;
                 }
                 if ui.selectable_label(self.active_tab == Tab::Settings, "⚙️ Paramètres").clicked() {
@@ -256,7 +260,7 @@ impl eframe::App for CleanRamApp {
             let theme_clone = self.theme.clone();
             match self.active_tab {
                 Tab::Memory => memory_ui::draw_memory_tab(self, ui, &theme_clone),
-                Tab::Hdd => disk_ui::draw_disk_tab(self, ui),
+                Tab::Optimization => disk_ui::draw_disk_tab(self, ui), // Renamed from Hdd
                 Tab::Services => services_ui::services_ui(self, ui),
                 Tab::Scheduler => scheduler_ui::draw_scheduler_tab(self, ui),
                 Tab::Network => network_ui::draw_network_tab(self, ui),
@@ -269,4 +273,4 @@ impl eframe::App for CleanRamApp {
             // Pas de vérification automatique au lancement pour éviter l'ouverture de PowerShell
         }
     }
-} 
+}

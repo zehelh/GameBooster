@@ -23,27 +23,9 @@ fn main() {
         );
     }
 
-    // Copiez les fichiers WinDivert
-    let windivert_files = ["WinDivert.dll", "WinDivert64.sys"];
-    let windivert_src_dir = Path::new("resources/windivert");
-
-    if windivert_src_dir.exists() {
-        for file_name in &windivert_files {
-            let src_path = windivert_src_dir.join(file_name);
-            if src_path.exists() {
-                let dest_file_path = dest_path.join(file_name);
-                println!("cargo:rerun-if-changed={}", src_path.display());
-                fs::copy(&src_path, dest_file_path).expect("Failed to copy WinDivert file");
-            } else {
-                 println!(
-                    "cargo:warning={} not found in 'resources/windivert' directory.", file_name
-                );
-            }
-        }
-    } else {
-         println!(
-            "cargo:warning='resources/windivert' directory not found. \
-            The network features will not work correctly."
-        );
-    }
-} 
+    println!("cargo:rerun-if-changed=build.rs");
+    println!("cargo:rerun-if-changed=app.manifest");
+    println!("cargo:rerun-if-changed=app.rc"); // Added for the new .rc file
+    // embed_resource::compile("app.manifest", embed_resource::NONE); // Old line
+    embed_resource::compile("app.rc", embed_resource::NONE); // Compile app.rc instead
+}

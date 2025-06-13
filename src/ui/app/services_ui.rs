@@ -434,13 +434,13 @@ impl CleanRamApp {
     }
 
     pub fn disable_defender_advanced(&mut self) {
-        println!("Attempting to disable Windows Defender with advanced methods...");
+        println!("Attempting to disable Windows Defender..."); // MODIFIED: Removed "with advanced methods"
         
         // Use tokio runtime in a separate thread to avoid blocking the UI
         let rt = std::thread::spawn(|| {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
-                crate::services::defender_advanced::AdvancedDefenderManager::comprehensive_disable().await
+                crate::services::defender::disable_defender_temporarily().await // MODIFIED: Call standard disable
             })
         });
         
@@ -449,28 +449,29 @@ impl CleanRamApp {
             Ok(Ok(success)) => {
                 if success {
                     self.defender_enabled = false;
-                    println!("Windows Defender disabled successfully with advanced methods");
+                    println!("Windows Defender disabled successfully"); // MODIFIED: Removed "with advanced methods"
                 } else {
-                    println!("Failed to disable Windows Defender with advanced methods - check console for details");
+                    // MODIFIED: Message aligned with disable_defender_temporarily
+                    println!("Failed to disable Windows Defender - may need administrator rights or tamper protection is enabled");
                 }
             }
             Ok(Err(e)) => {
-                eprintln!("Error with advanced Defender disable: {}", e);
+                eprintln!("Error disabling Defender: {}", e); // MODIFIED: Message aligned
             }
             Err(_) => {
-                eprintln!("Thread panic while using advanced Defender disable");
+                eprintln!("Thread panic while disabling Defender"); // MODIFIED: Message aligned
             }
         }
     }
 
     pub fn enable_defender_advanced(&mut self) {
-        println!("Attempting to enable Windows Defender with advanced methods...");
+        println!("Attempting to enable Windows Defender..."); // MODIFIED: Removed "with advanced methods"
         
         // Use tokio runtime in a separate thread to avoid blocking the UI
         let rt = std::thread::spawn(|| {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
-                crate::services::defender_advanced::AdvancedDefenderManager::comprehensive_enable().await
+                crate::services::defender::enable_defender().await // MODIFIED: Call standard enable
             })
         });
         
@@ -479,16 +480,17 @@ impl CleanRamApp {
             Ok(Ok(success)) => {
                 if success {
                     self.defender_enabled = true;
-                    println!("Windows Defender enabled successfully with advanced methods");
+                    println!("Windows Defender enabled successfully"); // MODIFIED: Removed "with advanced methods"
                 } else {
-                    println!("Failed to enable Windows Defender with advanced methods - check console for details");
+                    // MODIFIED: Message aligned with enable_defender
+                    println!("Failed to enable Windows Defender - may need administrator rights");
                 }
             }
             Ok(Err(e)) => {
-                eprintln!("Error with advanced Defender enable: {}", e);
+                eprintln!("Error enabling Defender: {}", e); // MODIFIED: Message aligned
             }
             Err(_) => {
-                eprintln!("Thread panic while using advanced Defender enable");
+                eprintln!("Thread panic while enabling Defender"); // MODIFIED: Message aligned
             }
         }
     }

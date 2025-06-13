@@ -1,6 +1,5 @@
 use crate::theme::{self};
 use crate::ui::app::CleanRamApp;
-use crate::os_info::get_windows_version_string;
 use eframe::egui;
 
 pub fn draw_settings_tab(app: &mut CleanRamApp, ui: &mut egui::Ui) {
@@ -30,8 +29,8 @@ pub fn draw_settings_tab(app: &mut CleanRamApp, ui: &mut egui::Ui) {
         ui.label("Informations Système");
         ui.separator();
         
-        let version_string = get_windows_version_string();
-        ui.label(format!("Version de Windows : {}", version_string));
+        // Use the already determined version string from the app state
+        ui.label(format!("Version de Windows : {}", app.windows_version_string));
         
         // You can add more system info here if needed
         // For example: CPU, GPU, RAM size, etc.
@@ -50,4 +49,4 @@ pub fn draw_settings_tab(app: &mut CleanRamApp, ui: &mut egui::Ui) {
             ui.label("et Rust.");
         });
     });
-} 
+}

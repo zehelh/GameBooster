@@ -60,3 +60,6 @@ winapi = { version = "0.3", features = [
     "securitybaseapi", "accctrl", "aclapi", "errhandlingapi", "fileapi",
     "libloaderapi", "memoryapi", "sysinfoapi", "tcpmib", "iphlpapi"
 ] }
+
+[build-dependencies]
+embed-resource = "2.4"

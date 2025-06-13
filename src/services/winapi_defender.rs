@@ -6,6 +6,9 @@ use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 use std::ffi::{c_void, CString};
 use std::path::Path;
+
+// Conditional import for Windows-specific features
+#[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
 
 use tracing;
@@ -380,10 +383,13 @@ impl DefenderManager {
         ];
 
         for cmd in commands {
-            let output = Command::new("powershell")
-                .args(&["-Command", cmd])
-                .creation_flags(0x08000000) // CREATE_NO_WINDOW
-                .output();
+            let mut command_obj = Command::new("powershell");
+            command_obj.args(&["-Command", cmd]);
+            
+            #[cfg(target_os = "windows")]
+            command_obj.creation_flags(0x08000000); // CREATE_NO_WINDOW
+            
+            let output = command_obj.output();
 
             match output {
                 Ok(result) => {
@@ -535,10 +541,13 @@ impl DefenderManager {
         ];
 
         for cmd in commands {
-            let _ = Command::new("powershell")
-                .args(&["-Command", cmd])
-                .creation_flags(0x08000000)
-                .output();
+            let mut command_obj = Command::new("powershell");
+            command_obj.args(&["-Command", cmd]);
+
+            #[cfg(target_os = "windows")]
+            command_obj.creation_flags(0x08000000);
+            
+            let _ = command_obj.output();
         }
 
         Ok(())

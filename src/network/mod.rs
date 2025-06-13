@@ -1,5 +1,4 @@
-
-//! # Network Module - Real-time Network Monitoring with QoS Control
+//! # Network Module - Real-time Network Monitoring with QoS
 //!
 //! This module provides real network process monitoring and uses Windows netsh for QoS.
 //! Uses silent netsh commands (no visible windows) for actual bandwidth limiting.
@@ -13,6 +12,9 @@ use serde::{Deserialize, Serialize};
 use sysinfo::{System};
 use std::process::Command;
 use std::time::Instant;
+
+/// Conditional import for Windows-specific features
+#[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
 
 /// Information about a network process with real-time data
@@ -166,10 +168,13 @@ foreach ($req in $requirements) {
 }
         "#;
 
-        let output = Command::new("powershell.exe")
-            .args(["-NoProfile", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-Command", check_script])
-            .creation_flags(0x08000000) // CREATE_NO_WINDOW
-            .output();
+        let mut command = Command::new("powershell.exe");
+        command.args(["-NoProfile", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-Command", check_script]);
+        
+        #[cfg(target_os = "windows")]
+        command.creation_flags(0x08000000); // CREATE_NO_WINDOW
+
+        let output = command.output();
 
         match output {
             Ok(result) => {
@@ -421,15 +426,18 @@ $result | ConvertTo-Json -Compress
 
         tracing::info!("🔧 Lancement script QoS avec sortie JSON");
         
-        let output = Command::new("powershell.exe")
-            .args([
+        let mut command = Command::new("powershell.exe");
+        command.args([
                 "-NoProfile", 
                 "-WindowStyle", "Hidden", 
                 "-ExecutionPolicy", "Bypass", 
                 "-Command", &powershell_script
-            ])
-            .creation_flags(0x08000000) // CREATE_NO_WINDOW
-            .output();
+            ]);
+        
+        #[cfg(target_os = "windows")]
+        command.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        
+        let output = command.output();
 
         match output {
             Ok(result) => {
@@ -596,10 +604,13 @@ Write-Host "✅ Script limiteur terminé pour {}"
         // Exécuter le script en arrière-plan
         tracing::info!("🔧 Lancement script limiteur temps réel");
         
-        let output = Command::new("powershell.exe")
-            .args(["-NoProfile", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-Command", &limiter_script])
-            .creation_flags(0x08000000) // CREATE_NO_WINDOW
-            .spawn(); // Utiliser spawn() au lieu de output() pour lancer en arrière-plan
+        let mut command = Command::new("powershell.exe");
+        command.args(["-NoProfile", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-Command", &limiter_script]);
+        
+        #[cfg(target_os = "windows")]
+        command.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        
+        let output = command.spawn(); // Utiliser spawn() au lieu de output() pour lancer en arrière-plan
 
         match output {
             Ok(mut child) => {
@@ -682,10 +693,13 @@ Write-Host "✅ Script limiteur terminé pour {}"
         
         tracing::info!("🔧 Script suppression GROUP POLICY QoS");
         
-        let output = Command::new("powershell.exe")
-            .args(["-NoProfile", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-Command", &powershell_script])
-            .creation_flags(0x08000000) // CREATE_NO_WINDOW
-            .output();
+        let mut command = Command::new("powershell.exe");
+        command.args(["-NoProfile", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-Command", &powershell_script]);
+
+        #[cfg(target_os = "windows")]
+        command.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        
+        let output = command.output();
         
         match output {
             Ok(result) => {
@@ -755,10 +769,13 @@ Write-Host "✅ Script limiteur terminé pour {}"
         
         tracing::info!("🔧 Script suppression globale avec sortie JSON");
         
-        let output = Command::new("powershell.exe")
-            .args(["-NoProfile", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-Command", powershell_script])
-            .creation_flags(0x08000000) // CREATE_NO_WINDOW
-            .output();
+        let mut command = Command::new("powershell.exe");
+        command.args(["-NoProfile", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-Command", powershell_script]);
+
+        #[cfg(target_os = "windows")]
+        command.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        
+        let output = command.output();
         
         match output {
             Ok(result) => {
@@ -853,6 +870,7 @@ Write-Host "✅ Script limiteur terminé pour {}"
     }
 
     /// Verify if QoS policies are active using Windows Group Policy (JSON output)
+    #[cfg(target_os = "windows")]
     pub fn verify_qos_policies(&self) -> Result<Vec<QosPolicyInfo>> {
         tracing::info!("📋 Vérification des politiques QoS via JSON...");
         
@@ -903,10 +921,13 @@ $policiesFound | ForEach-Object {
 $policiesFound | ConvertTo-Json -Compress
         "#;
 
-        let output = Command::new("powershell.exe")
-            .args(["-NoProfile", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-Command", powershell_script])
-            .creation_flags(0x08000000) // CREATE_NO_WINDOW
-            .output();
+        let mut command = Command::new("powershell.exe");
+            command.args(["-NoProfile", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-Command", powershell_script]);
+        
+        #[cfg(target_os = "windows")] // This is technically redundant here due to the function's cfg, but good for clarity
+        command.creation_flags(0x08000000); // CREATE_NO_WINDOW
+            
+        let output = command.output();
 
         match output {
             Ok(result) => {
@@ -938,6 +959,14 @@ $policiesFound | ConvertTo-Json -Compress
                 Err(anyhow::anyhow!("Erreur vérification QoS: {}", e))
             }
         }
+    }
+
+    /// Placeholder for Linux QoS verification
+    #[cfg(not(target_os = "windows"))]
+    pub fn verify_qos_policies(&self) -> Result<Vec<QosPolicyInfo>> {
+        tracing::info!("📋 Vérification des politiques QoS (Linux stub - non implémenté)");
+        // Retourner un vecteur vide ou une erreur appropriée pour Linux
+        Ok(Vec::new())
     }
 
     /// Get a summary of active QoS limitations
