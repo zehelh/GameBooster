@@ -1,4 +1,4 @@
-use crate::memory::{clean_memory, get_detailed_system_memory_info};
+use crate::memory::{clean_memory, get_detailed_system_memory_info, CleaningResults};
 use crate::theme::Theme;
 use crate::ui::app::CleanRamApp;
 use eframe::egui::{self, Layout, RichText, ProgressBar};
@@ -11,6 +11,7 @@ fn bytes_to_gb(bytes: u64) -> f64 {
 pub fn draw_memory_tab(app: &mut CleanRamApp, ui: &mut egui::Ui, _theme: &Theme) {
     let mem_info = get_detailed_system_memory_info();
 
+    // Mettre à jour l'utilisation de la RAM uniquement si aucune opération de nettoyage n'est en cours
     if app.cleaning_promise.is_none() {
         app.ram_usage = mem_info.used_physical_percent();
     }
@@ -76,7 +77,19 @@ pub fn draw_memory_tab(app: &mut CleanRamApp, ui: &mut egui::Ui, _theme: &Theme)
         ui.add_enabled(!is_cleaning, clean_button).on_hover_text("Nettoie les processus et le working set de l'application.")
             .clicked().then(|| {
                 let promise = Promise::spawn_thread("memory_clean", || {
-                    clean_memory().expect("Memory cleaning failed")
+                    // Gérer le Result de clean_memory
+                    match clean_memory() {
+                        Ok(results) => results,
+                        Err(e) => {
+                            // En cas d'erreur, créer un CleaningResults avec le message d'erreur
+                            let mut error_results = CleaningResults::new();
+                            error_results.has_error = true;
+                            error_results.error_message = format!("Erreur lors du nettoyage de la mémoire : {}", e);
+                            error_results.is_completed = true;
+                            error_results.end_time = Some(chrono::Local::now());
+                            error_results
+                        }
+                    }
                 });
                 app.cleaning_promise = Some(promise);
             });
@@ -101,27 +114,38 @@ pub fn draw_memory_tab(app: &mut CleanRamApp, ui: &mut egui::Ui, _theme: &Theme)
         ui.separator();
         ui.add_space(10.0);
         ui.vertical_centered(|ui| {
-            ui.label(RichText::new("Nettoyage terminé").strong());
+            ui.label(RichText::new("Résultat du Nettoyage").strong());
         });
-        let freed_mb = results.total_freed() as f64 / 1024.0 / 1024.0;
-        ui.label(format!("Mémoire libérée : {:.2} MB", freed_mb));
-        ui.label(format!("Processus optimisés : {}", results.processes.len()));
 
-        if !results.processes.is_empty() {
-            ui.add_space(10.0);
-            egui::CollapsingHeader::new("Détails de l'optimisation").show(ui, |ui| {
-                egui::ScrollArea::vertical().max_height(200.0).show(ui, |ui| {
-                    for process in &results.processes {
-                        ui.horizontal(|ui| {
-                            ui.label(format!("{}", process.name));
-                            ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
-                                let mem_freed_mb = process.memory_freed as f64 / 1024.0 / 1024.0;
-                                ui.label(format!("{:.2} MB", mem_freed_mb));
+        if results.has_error {
+            ui.colored_label(egui::Color32::RED, &results.error_message);
+        } else {
+            let freed_mb = results.total_freed() as f64 / 1024.0 / 1024.0;
+            if freed_mb > 0.0 || !results.processes.is_empty() {
+                ui.label(format!("Mémoire libérée : {:.2} MB", freed_mb));
+                ui.label(format!("Processus optimisés : {}", results.processes.len()));
+            } else {
+                // Afficher le message spécifique de Linux si aucune mémoire n'a été "libérée"
+                // et qu'aucun processus n'a été listé.
+                ui.label(&results.error_message); 
+            }
+
+            if !results.processes.is_empty() {
+                ui.add_space(10.0);
+                egui::CollapsingHeader::new("Détails de l'optimisation").show(ui, |ui| {
+                    egui::ScrollArea::vertical().max_height(200.0).show(ui, |ui| {
+                        for process in &results.processes {
+                            ui.horizontal(|ui| {
+                                ui.label(format!("{}", process.name));
+                                ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
+                                    let mem_freed_mb = process.memory_freed as f64 / 1024.0 / 1024.0;
+                                    ui.label(format!("{:.2} MB", mem_freed_mb));
+                                });
                             });
-                        });
-                    }
+                        }
+                    });
                 });
-            });
+            }
         }
     }
-} 
+}

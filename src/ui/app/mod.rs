@@ -59,7 +59,6 @@ impl CleanRamApp {
         // Créer des textures simples sans charger d'images pour éviter les crashes
         let dummy_texture_id = egui::TextureId::default();
         
-        // Network manager initialization
         let network_limiter = match crate::network::NetworkLimiter::new() {
             Ok(limiter) => {
                 tracing::info!("✅ Network manager QoS initialized");
@@ -71,9 +70,9 @@ impl CleanRamApp {
             }
         };
 
-        let detected_os_version = crate::os_info::get_windows_version_string();
-        tracing::info!("Detected OS Version on startup (tracing): {}", detected_os_version);
-        println!("Detected OS Version on startup (println): {}", detected_os_version); // Added for direct console output
+        let detected_os_version = crate::os_info::get_os_platform(); // Modifié pour obtenir le type d'OS
+        tracing::info!("Detected OS Platform on startup (tracing): {}", detected_os_version);
+        println!("Detected OS Platform on startup (println): {}", detected_os_version);
 
         Self {
             active_tab: Tab::Memory,
@@ -88,7 +87,7 @@ impl CleanRamApp {
             defender_status_promise: None,
             defender_action_promise: None,
             last_defender_status: None,
-            windows_version_string: detected_os_version, // Use the logged version
+            windows_version_string: detected_os_version, // Stocke la plateforme détectée
             logo: dummy_texture_id,
             ram_icon: dummy_texture_id,
             is_first_frame: true,
@@ -232,22 +231,31 @@ impl CleanRamApp {
 impl eframe::App for CleanRamApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         ctx.set_visuals(self.theme.visuals.clone());
+        let is_linux = self.windows_version_string.to_lowercase() == "linux";
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.horizontal(|ui| {
                 if ui.selectable_label(self.active_tab == Tab::Memory, "🧠 Mémoire").clicked() {
                     self.active_tab = Tab::Memory;
                 }
-                if ui.selectable_label(self.active_tab == Tab::Optimization, "⚙️ Optimisation").clicked() { // Renamed from Hdd and "💾 Disque"
+                
+                let optimization_label = if is_linux { "⚙️ Optimisation (WIP)" } else { "⚙️ Optimisation" };
+                if ui.selectable_label(self.active_tab == Tab::Optimization, optimization_label).clicked() {
                     self.active_tab = Tab::Optimization;
                 }
-                if ui.selectable_label(self.active_tab == Tab::Services, "🛡️ Services").clicked() {
+
+                let services_label = if is_linux { "🛡️ Services (WIP)" } else { "🛡️ Services" };
+                if ui.selectable_label(self.active_tab == Tab::Services, services_label).clicked() {
                     self.active_tab = Tab::Services;
                 }
+
+                // Le planificateur peut rester, il est multiplateforme en théorie
                 if ui.selectable_label(self.active_tab == Tab::Scheduler, "⏰ Planificateur").clicked() {
                     self.active_tab = Tab::Scheduler;
                 }
-                if ui.selectable_label(self.active_tab == Tab::Network, "📡 Réseau").clicked() { // Changed icon from 🌐 to 📡
+
+                let network_label = if is_linux { "📡 Réseau (WIP)" } else { "📡 Réseau" };
+                if ui.selectable_label(self.active_tab == Tab::Network, network_label).clicked() { 
                     self.active_tab = Tab::Network;
                 }
                 if ui.selectable_label(self.active_tab == Tab::Settings, "⚙️ Paramètres").clicked() {
@@ -260,10 +268,34 @@ impl eframe::App for CleanRamApp {
             let theme_clone = self.theme.clone();
             match self.active_tab {
                 Tab::Memory => memory_ui::draw_memory_tab(self, ui, &theme_clone),
-                Tab::Optimization => disk_ui::draw_disk_tab(self, ui), // Renamed from Hdd
-                Tab::Services => services_ui::services_ui(self, ui),
+                Tab::Optimization => {
+                    if is_linux {
+                        ui.centered_and_justified(|ui| {
+                            ui.label("Cet onglet est en cours de développement pour Linux.");
+                        });
+                    } else {
+                        disk_ui::draw_disk_tab(self, ui);
+                    }
+                }
+                Tab::Services => {
+                    if is_linux {
+                        ui.centered_and_justified(|ui| {
+                            ui.label("Cet onglet est en cours de développement pour Linux.");
+                        });
+                    } else {
+                        services_ui::services_ui(self, ui);
+                    }
+                }
                 Tab::Scheduler => scheduler_ui::draw_scheduler_tab(self, ui),
-                Tab::Network => network_ui::draw_network_tab(self, ui),
+                Tab::Network => {
+                    if is_linux {
+                        ui.centered_and_justified(|ui| {
+                            ui.label("Cet onglet est en cours de développement pour Linux.");
+                        });
+                    } else {
+                        network_ui::draw_network_tab(self, ui);
+                    }
+                }
                 Tab::Settings => settings_ui::draw_settings_tab(self, ui),
             }
         });

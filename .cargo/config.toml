@@ -10,11 +10,8 @@ opt-level = "z"  # Optimiser pour la taille
 
 # Configuration for cross-compiling to Linux
 [target.x86_64-unknown-linux-gnu]
-linker = "x86_64-linux-gnu-gcc" # Assurez-vous que ce linker est installé et dans votre PATH
-                                # ou utilisez une alternative comme "zig cc" si vous l'avez configuré.
-# Exemple avec zig cc (si installé et dans le PATH):
-# linker = "zig-cc"
-# rustflags = ["-C", "linker=zig-cc", "-C", "target-feature=+crt-static"]
+linker = "/home/zehelh/zig_cc_wrapper.sh" # Utiliser le script wrapper
+rustflags = ["-C", "target-feature=+crt-static"]
 
 # Vous pourriez avoir besoin de spécifier où trouver les bibliothèques système pour la cible.
 # Consultez la documentation Cargo pour plus de détails sur la configuration de build.

@@ -1,15 +1,22 @@
 use anyhow::{Result};
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
+#[cfg(windows)]
 use windows_sys::Win32::Foundation::{CloseHandle, BOOL, MAX_PATH};
+#[cfg(windows)]
 use windows_sys::Win32::System::ProcessStatus::{
     EmptyWorkingSet, EnumProcesses, GetModuleBaseNameW, K32GetProcessMemoryInfo,
     PROCESS_MEMORY_COUNTERS,
 };
+#[cfg(windows)]
 use windows_sys::Win32::System::SystemInformation::{GlobalMemoryStatusEx, MEMORYSTATUSEX};
+#[cfg(windows)]
 use windows_sys::Win32::System::Threading::{
     GetCurrentProcess, OpenProcess, PROCESS_QUERY_INFORMATION, PROCESS_SET_QUOTA, PROCESS_VM_READ,
 };
+
+// Import from local utils module
+use crate::utils;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProcessCleaned {
@@ -75,6 +82,7 @@ impl SystemMemoryInfo {
 }
 
 // Fonction principale pour nettoyer la mémoire
+#[cfg(windows)]
 pub fn clean_memory() -> Result<CleaningResults> {
     let mut results = CleaningResults::new();
     let mut pids = [0u32; 2048];
@@ -190,7 +198,66 @@ pub fn clean_memory() -> Result<CleaningResults> {
     Ok(results)
 }
 
+#[cfg(not(windows))]
+pub fn clean_memory() -> Result<CleaningResults> {
+    use std::process::Command;
+    use sysinfo::{System};
+
+    let mut results = CleaningResults::new();
+    let mut sys = System::new_all();
+    sys.refresh_memory();
+    results.total_memory_before = (sys.total_memory() - sys.available_memory()) as usize;
+
+    if utils::is_elevated() {
+        // Synchroniser les données sur le disque pour éviter la perte de données
+        let sync_output = Command::new("sync").output();
+        if sync_output.is_err() || !sync_output.unwrap().status.success() {
+            results.has_error = true;
+            results.error_message = "Échec de la commande sync avant drop_caches.".to_string();
+        } else {
+            // Tenter de vider les caches pagecache, dentries et inodes
+            // echo 1 > /proc/sys/vm/drop_caches  (PageCache)
+            // echo 2 > /proc/sys/vm/drop_caches  (dentries et inodes)
+            // echo 3 > /proc/sys/vm/drop_caches  (PageCache, dentries et inodes)
+            let drop_caches_output = Command::new("sh")
+                .arg("-c")
+                .arg("echo 3 > /proc/sys/vm/drop_caches")
+                .output();
+
+            if drop_caches_output.is_err() || !drop_caches_output.unwrap().status.success() {
+                results.has_error = true;
+                results.error_message = "Échec de la commande drop_caches. Vérifiez les droits root.".to_string();
+            } else {
+                results.error_message = "Les caches système (pagecache, dentries, inodes) ont été vidés.".to_string();
+            }
+        }
+    } else {
+        results.has_error = true; // Pas une erreur bloquante, mais une info
+        results.error_message = "L'application n'a pas les droits root pour vider les caches système. Cette opération est plus efficace avec les droits administrateur.".to_string();
+    }
+
+    sys.refresh_memory(); // Re-vérifier après l'opération
+    results.total_memory_after = (sys.total_memory() - sys.available_memory()) as usize;
+    results.is_completed = true;
+    results.end_time = Some(Local::now());
+
+    // Si une erreur s'est produite mais que de la mémoire a quand même été libérée (peu probable ici sans root)
+    // ou si aucune erreur et de la mémoire libérée.
+    if (!results.has_error || results.total_freed() > 0) && results.error_message.is_empty() {
+        results.error_message = format!(
+            "Mémoire des caches système potentiellement libérée : {} Mo",
+            results.total_freed() / 1024 / 1024
+        );
+    } else if results.total_freed() == 0 && !results.has_error && results.error_message.is_empty() {
+        results.error_message = "Aucune mémoire supplémentaire n'a pu être libérée des caches système, ou l'opération a été sautée (pas de droits root).".to_string();
+    }
+    // Si has_error est true, error_message est déjà rempli.
+
+    Ok(results)
+}
+
 // Fonction pour obtenir les informations sur la mémoire système
+#[cfg(windows)]
 pub fn get_system_memory_info() -> (u64, u64) {
     let mut mem_info: MEMORYSTATUSEX = unsafe { std::mem::zeroed() };
     mem_info.dwLength = std::mem::size_of::<MEMORYSTATUSEX>() as u32;
@@ -201,6 +268,17 @@ pub fn get_system_memory_info() -> (u64, u64) {
     }
 }
 
+#[cfg(not(windows))]
+pub fn get_system_memory_info() -> (u64, u64) {
+    // Cette fonction semble moins utilisée que get_detailed_system_memory_info
+    // mais on la met à jour pour la cohérence.
+    use sysinfo::{System};
+    let mut sys = System::new_all();
+    sys.refresh_memory();
+    (sys.total_memory(), sys.total_memory() - sys.available_memory())
+}
+
+#[cfg(windows)]
 pub fn get_detailed_system_memory_info() -> SystemMemoryInfo {
     let mut mem_info: MEMORYSTATUSEX = unsafe { std::mem::zeroed() };
     mem_info.dwLength = std::mem::size_of::<MEMORYSTATUSEX>() as u32;
@@ -218,5 +296,19 @@ pub fn get_detailed_system_memory_info() -> SystemMemoryInfo {
             total_pagefile: 0,
             avail_pagefile: 0,
         }
+    }
+}
+
+#[cfg(not(windows))]
+pub fn get_detailed_system_memory_info() -> SystemMemoryInfo {
+    use sysinfo::{System};
+    let mut sys = System::new_all();
+    sys.refresh_memory(); // Important: rafraîchir les données mémoire
+
+    SystemMemoryInfo {
+        total_physical: sys.total_memory(),
+        avail_physical: sys.available_memory(),
+        total_pagefile: sys.total_swap(),
+        avail_pagefile: sys.free_swap(), // sys.available_swap() n'existe pas, free_swap est le plus proche
     }
 }

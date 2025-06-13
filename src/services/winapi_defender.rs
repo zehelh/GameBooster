@@ -1,29 +1,35 @@
 // Windows Defender management using Registry and WinAPI
 // Manages Windows Defender without PowerShell commands
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result};
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
-use std::ffi::{c_void, CString};
-use std::path::Path;
 
-// Conditional import for Windows-specific features
+#[cfg(target_os = "windows")]
+use std::ffi::{c_void, CString};
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
-
+#[cfg(target_os = "windows")]
 use tracing;
+#[cfg(target_os = "windows")]
 use windows_sys::Win32::Foundation::{
     CloseHandle, ERROR_FILE_NOT_FOUND, ERROR_SUCCESS, HANDLE,
 };
+#[cfg(target_os = "windows")]
 use windows_sys::Win32::Security::{
     GetTokenInformation, TokenElevation, TOKEN_ELEVATION, TOKEN_QUERY,
 };
+#[cfg(target_os = "windows")]
 use windows_sys::Win32::System::Registry::{
     RegCloseKey, RegCreateKeyExA, RegDeleteValueA, RegOpenKeyExA, RegQueryValueExA, RegSetValueExA,
     HKEY, HKEY_LOCAL_MACHINE, KEY_READ, KEY_SET_VALUE, KEY_WOW64_64KEY, REG_DWORD,
     REG_OPTION_NON_VOLATILE,
 };
+#[cfg(target_os = "windows")]
 use windows_sys::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
+
+// Import from local utils module
+use crate::utils;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DefenderStatus {
@@ -48,8 +54,9 @@ impl Default for DefenderStatus {
 
 pub struct DefenderManager;
 
+#[cfg(target_os = "windows")]
 impl DefenderManager {
-    const DEFENDER_REGISTRY_PATH: &'static str = "SOFTWARE\\Microsoft\\Windows Defender";
+    const DEFENDER_REGISTRY_PATH: &'static str = "SOFTWARE\\\\Microsoft\\\\Windows Defender";
     const POLICY_REGISTRY_PATH: &'static str = "SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection";
     const FEATURES_REGISTRY_PATH: &'static str = "SOFTWARE\\Microsoft\\Windows Defender\\Features";
     const SPYNET_REGISTRY_PATH: &'static str = "SOFTWARE\\Microsoft\\Windows Defender\\Spynet";
@@ -240,7 +247,7 @@ impl DefenderManager {
 
     /// Attempt to disable Windows Defender immediately without restart
     pub fn disable_defender_immediately() -> Result<Vec<String>> {
-        if !Self::is_elevated() {
+        if !utils::is_elevated() {
             return Err(anyhow!(
                 "Administrator privileges required to modify Windows Defender"
             ));
@@ -411,7 +418,7 @@ impl DefenderManager {
 
     /// Enable Defender immediately
     pub fn enable_defender_immediately() -> Result<Vec<String>> {
-        if !Self::is_elevated() {
+        if !utils::is_elevated() {
             return Err(anyhow!(
                 "Administrator privileges required to modify Windows Defender"
             ));
@@ -556,7 +563,7 @@ impl DefenderManager {
     /// Attempt to disable Windows Defender real-time protection via registry
     /// Uses multiple registry locations for maximum compatibility
     pub fn disable_defender_safely() -> Result<bool> {
-        if !Self::is_elevated() {
+        if !utils::is_elevated() {
             return Err(anyhow!(
                 "Administrator privileges required to modify Windows Defender"
             ));
@@ -855,7 +862,7 @@ pause
 
     /// Attempt to enable Windows Defender real-time protection via registry
     pub fn enable_defender_safely() -> Result<bool> {
-        if !Self::is_elevated() {
+        if !utils::is_elevated() {
             return Err(anyhow!(
                 "Administrator privileges required to modify Windows Defender"
             ));
@@ -918,7 +925,99 @@ pause
         Self::_set_features_setting("TamperProtection", 5)
     }
 
-    /// Sets a DWORD value in the Features registry key.
+    /// Set a DWORD value in the Defender Policy registry key
+    fn _set_defender_policy(value_name: &str, value: u32) -> Result<()> {
+        unsafe {
+            let mut key: HKEY = std::ptr::null_mut();
+            let registry_path =
+                CString::new(Self::POLICY_REGISTRY_PATH).map_err(|e| anyhow!(e))?;
+
+            let result = RegCreateKeyExA(
+                HKEY_LOCAL_MACHINE,
+                registry_path.as_ptr() as *const u8,
+                0,
+                std::ptr::null_mut(),
+                REG_OPTION_NON_VOLATILE,
+                KEY_SET_VALUE | KEY_WOW64_64KEY,
+                std::ptr::null_mut(),
+                &mut key,
+                std::ptr::null_mut(),
+            );
+
+            if result != ERROR_SUCCESS {
+                return Err(anyhow!(
+                    "Failed to create/open registry policy key. Error: {}",
+                    result
+                ));
+            }
+
+            let value_name_cstr = CString::new(value_name).map_err(|e| anyhow!(e))?;
+            let value_dword: u32 = value;
+
+            let set_result = RegSetValueExA(
+                key,
+                value_name_cstr.as_ptr() as *const u8,
+                0,
+                REG_DWORD,
+                &value_dword as *const u32 as *const u8,
+                std::mem::size_of::<u32>() as u32,
+            );
+
+            RegCloseKey(key);
+
+            if set_result == ERROR_SUCCESS {
+                Ok(())
+            } else {
+                Err(anyhow!(
+                    "Failed to set registry policy '{}'. Error: {}. Tamper protection may be on.",
+                    value_name,
+                    set_result
+                ))
+            }
+        }
+    }
+
+    /// Delete a value from the Defender Policy registry key
+    fn _delete_defender_policy(value_name: &str) -> Result<bool> {
+        unsafe {
+            let mut key: HKEY = std::ptr::null_mut();
+            let registry_path =
+                CString::new(Self::POLICY_REGISTRY_PATH).map_err(|e| anyhow!(e))?;
+
+            let result = RegOpenKeyExA(
+                HKEY_LOCAL_MACHINE,
+                registry_path.as_ptr() as *const u8,
+                0,
+                KEY_SET_VALUE | KEY_WOW64_64KEY,
+                &mut key,
+            );
+
+            if result != ERROR_SUCCESS {
+                // If the key doesn't exist, the policy isn't active, so we're good.
+                return Ok(true);
+            }
+
+            let value_name_cstr = CString::new(value_name).map_err(|e| anyhow!(e))?;
+            let delete_result =
+                RegDeleteValueA(key, value_name_cstr.as_ptr() as *const u8);
+
+            RegCloseKey(key);
+
+            if delete_result == ERROR_SUCCESS
+                || delete_result == ERROR_FILE_NOT_FOUND
+            {
+                Ok(true)
+            } else {
+                Err(anyhow!(
+                    "Failed to delete registry policy '{}'. Error: {}. Tamper protection may be on.",
+                    value_name,
+                    delete_result
+                ))
+            }
+        }
+    }
+    
+    /// Set a DWORD value in the Defender Features registry key
     fn _set_features_setting(value_name: &str, value: u32) -> Result<()> {
         unsafe {
             let mut key: HKEY = std::ptr::null_mut();
@@ -970,164 +1069,7 @@ pause
         }
     }
 
-    /// Sets a DWORD value in the SpyNet registry key.
-    fn _set_spynet_setting(value_name: &str, value: u32) -> Result<()> {
-        unsafe {
-            let mut key: HKEY = std::ptr::null_mut();
-            let registry_path =
-                CString::new(Self::SPYNET_REGISTRY_PATH).map_err(|e| anyhow!(e))?;
-
-            let result = RegCreateKeyExA(
-                HKEY_LOCAL_MACHINE,
-                registry_path.as_ptr() as *const u8,
-                0,
-                std::ptr::null_mut(),
-                REG_OPTION_NON_VOLATILE,
-                KEY_SET_VALUE | KEY_WOW64_64KEY,
-                std::ptr::null_mut(),
-                &mut key,
-                std::ptr::null_mut(),
-            );
-
-            if result != ERROR_SUCCESS {
-                return Err(anyhow!(
-                    "Failed to create/open SpyNet registry key. Error: {}",
-                    result
-                ));
-            }
-
-            let value_name_cstr = CString::new(value_name).map_err(|e| anyhow!(e))?;
-            let value_dword: u32 = value;
-
-            let set_result = RegSetValueExA(
-                key,
-                value_name_cstr.as_ptr() as *const u8,
-                0,
-                REG_DWORD,
-                &value_dword as *const u32 as *const u8,
-                std::mem::size_of::<u32>() as u32,
-            );
-
-            RegCloseKey(key);
-
-            if set_result == ERROR_SUCCESS {
-                Ok(())
-            } else {
-                Err(anyhow!(
-                    "Failed to set SpyNet setting '{}'. Error: {}",
-                    value_name,
-                    set_result
-                ))
-            }
-        }
-    }
-
-    /// Sets a DWORD value in the Scan registry key.
-    fn _set_scan_setting(value_name: &str, value: u32) -> Result<()> {
-        unsafe {
-            let mut key: HKEY = std::ptr::null_mut();
-            let registry_path =
-                CString::new(Self::SCAN_REGISTRY_PATH).map_err(|e| anyhow!(e))?;
-
-            let result = RegCreateKeyExA(
-                HKEY_LOCAL_MACHINE,
-                registry_path.as_ptr() as *const u8,
-                0,
-                std::ptr::null_mut(),
-                REG_OPTION_NON_VOLATILE,
-                KEY_SET_VALUE | KEY_WOW64_64KEY,
-                std::ptr::null_mut(),
-                &mut key,
-                std::ptr::null_mut(),
-            );
-
-            if result != ERROR_SUCCESS {
-                return Err(anyhow!(
-                    "Failed to create/open Scan registry key. Error: {}",
-                    result
-                ));
-            }
-
-            let value_name_cstr = CString::new(value_name).map_err(|e| anyhow!(e))?;
-            let value_dword: u32 = value;
-
-            let set_result = RegSetValueExA(
-                key,
-                value_name_cstr.as_ptr() as *const u8,
-                0,
-                REG_DWORD,
-                &value_dword as *const u32 as *const u8,
-                std::mem::size_of::<u32>() as u32,
-            );
-
-            RegCloseKey(key);
-
-            if set_result == ERROR_SUCCESS {
-                Ok(())
-            } else {
-                Err(anyhow!(
-                    "Failed to set Scan setting '{}'. Error: {}",
-                    value_name,
-                    set_result
-                ))
-            }
-        }
-    }
-
-    /// Try to disable the Windows Defender service itself
-    fn _disable_defender_service() -> Result<()> {
-        const SERVICE_REGISTRY_PATH: &str = "SYSTEM\\CurrentControlSet\\Services\\WinDefend";
-        
-        unsafe {
-            let mut key: HKEY = std::ptr::null_mut();
-            let registry_path = CString::new(SERVICE_REGISTRY_PATH).map_err(|e| anyhow!(e))?;
-
-            let result = RegCreateKeyExA(
-                HKEY_LOCAL_MACHINE,
-                registry_path.as_ptr() as *const u8,
-                0,
-                std::ptr::null_mut(),
-                REG_OPTION_NON_VOLATILE,
-                KEY_SET_VALUE | KEY_WOW64_64KEY,
-                std::ptr::null_mut(),
-                &mut key,
-                std::ptr::null_mut(),
-            );
-
-            if result != ERROR_SUCCESS {
-                return Err(anyhow!(
-                    "Failed to open WinDefend service registry key. Error: {}",
-                    result
-                ));
-            }
-
-            // Set Start to 4 (disabled)
-            let value_name_cstr = CString::new("Start").map_err(|e| anyhow!(e))?;
-            let value_dword: u32 = 4; // SERVICE_DISABLED
-
-            let set_result = RegSetValueExA(
-                key,
-                value_name_cstr.as_ptr() as *const u8,
-                0,
-                REG_DWORD,
-                &value_dword as *const u32 as *const u8,
-                std::mem::size_of::<u32>() as u32,
-            );
-
-            RegCloseKey(key);
-
-            if set_result == ERROR_SUCCESS {
-                Ok(())
-            } else {
-                Err(anyhow!(
-                    "Failed to disable WinDefend service. Error: {}",
-                    set_result
-                ))
-            }
-        }
-    }
-
-    /// Sets a DWORD value in the main Defender registry key.
+    /// Set a DWORD value in the main Defender registry key
     fn _set_defender_main_setting(value_name: &str, value: u32) -> Result<()> {
         unsafe {
             let mut key: HKEY = std::ptr::null_mut();
@@ -1179,7 +1121,7 @@ pause
         }
     }
 
-    /// Deletes a value from the main Defender registry key.
+    /// Delete a value from the main Defender registry key
     fn _delete_defender_main_setting(value_name: &str) -> Result<bool> {
         unsafe {
             let mut key: HKEY = std::ptr::null_mut();
@@ -1219,135 +1161,6 @@ pause
         }
     }
 
-    /// Sets a DWORD value in the Defender *policy* registry key.
-    fn _set_defender_policy(value_name: &str, value: u32) -> Result<()> {
-        if !Self::is_elevated() {
-            return Err(anyhow!(
-                "Administrator privileges required to modify Windows Defender policies"
-            ));
-        }
-
-        unsafe {
-            let mut key: HKEY = std::ptr::null_mut();
-            let registry_path =
-                CString::new(Self::POLICY_REGISTRY_PATH).map_err(|e| anyhow!(e))?;
-
-            let result = RegCreateKeyExA(
-                HKEY_LOCAL_MACHINE,
-                registry_path.as_ptr() as *const u8,
-                0,
-                std::ptr::null_mut(),
-                REG_OPTION_NON_VOLATILE,
-                KEY_SET_VALUE | KEY_WOW64_64KEY,
-                std::ptr::null_mut(),
-                &mut key,
-                std::ptr::null_mut(),
-            );
-
-            if result != ERROR_SUCCESS {
-                return Err(anyhow!(
-                    "Failed to create/open registry policy key. Error: {}",
-                    result
-                ));
-            }
-
-            let value_name_cstr = CString::new(value_name).map_err(|e| anyhow!(e))?;
-            let value_dword: u32 = value;
-
-            let set_result = RegSetValueExA(
-                key,
-                value_name_cstr.as_ptr() as *const u8,
-                0,
-                REG_DWORD,
-                &value_dword as *const u32 as *const u8,
-                std::mem::size_of::<u32>() as u32,
-            );
-
-            RegCloseKey(key);
-
-            if set_result == ERROR_SUCCESS {
-                Ok(())
-            } else {
-                Err(anyhow!(
-                    "Failed to set registry policy '{}'. Error: {}. Tamper protection may be on.",
-                    value_name,
-                    set_result
-                ))
-            }
-        }
-    }
-
-    /// Deletes a value from the Defender *policy* registry key.
-    fn _delete_defender_policy(value_name: &str) -> Result<bool> {
-        if !Self::is_elevated() {
-            return Err(anyhow!(
-                "Administrator privileges required to modify Windows Defender policies"
-            ));
-        }
-
-        unsafe {
-            let mut key: HKEY = std::ptr::null_mut();
-            let registry_path =
-                CString::new(Self::POLICY_REGISTRY_PATH).map_err(|e| anyhow!(e))?;
-
-            let result = RegOpenKeyExA(
-                HKEY_LOCAL_MACHINE,
-                registry_path.as_ptr() as *const u8,
-                0,
-                KEY_SET_VALUE | KEY_WOW64_64KEY,
-                &mut key,
-            );
-
-            if result != ERROR_SUCCESS {
-                // If the key doesn't exist, the policy isn't active, so we're good.
-                return Ok(true);
-            }
-
-            let value_name_cstr = CString::new(value_name).map_err(|e| anyhow!(e))?;
-            let delete_result =
-                RegDeleteValueA(key, value_name_cstr.as_ptr() as *const u8);
-
-            RegCloseKey(key);
-
-            if delete_result == ERROR_SUCCESS
-                || delete_result == ERROR_FILE_NOT_FOUND
-            {
-                Ok(true)
-            } else {
-                Err(anyhow!(
-                    "Failed to delete registry policy '{}'. Error: {}. Tamper protection may be on.",
-                    value_name,
-                    delete_result
-                ))
-            }
-        }
-    }
-
-    /// Check if the current process is running with elevated privileges
-    fn is_elevated() -> bool {
-        unsafe {
-            let mut token: HANDLE = std::ptr::null_mut();
-            if OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &mut token) == 0 {
-                return false;
-            }
-
-            let mut elevation: TOKEN_ELEVATION = std::mem::zeroed();
-            let mut return_length: u32 = 0;
-            
-            let result = GetTokenInformation(
-                token,
-                TokenElevation,
-                &mut elevation as *mut TOKEN_ELEVATION as *mut c_void,
-                std::mem::size_of::<TOKEN_ELEVATION>() as u32,
-                &mut return_length,
-            );
-
-            CloseHandle(token);
-
-            result != 0 && elevation.TokenIsElevated != 0
-        }
-    }
-
     /// Get a safe status check that doesn't require admin privileges
     pub fn get_safe_status() -> DefenderStatus {
         let status = Self::check_defender_status().unwrap_or_else(|_| DefenderStatus {
@@ -1358,5 +1171,26 @@ pause
             last_check: Local::now(),
         });
         status
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+impl DefenderManager {
+    pub fn check_defender_status() -> Result<DefenderStatus> {
+        Ok(DefenderStatus {
+            real_time_protection: false,
+            cloud_protection: false,
+            automatic_sample_submission: false,
+            tamper_protection: false,
+            last_check: Local::now(),
+        })
+    }
+
+    pub fn disable_defender_immediately() -> Result<Vec<String>> {
+        Ok(vec!["Fonctionnalité non disponible sur Linux".to_string()])
+    }
+
+    pub fn enable_defender_immediately() -> Result<Vec<String>> {
+        Ok(vec!["Fonctionnalité non disponible sur Linux".to_string()])
     }
 }

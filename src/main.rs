@@ -8,6 +8,7 @@ mod scheduler;
 mod services;
 mod theme;
 mod ui;
+mod utils; // Added utils module
 
 use ui::app::CleanRamApp;
 use tracing::{info, warn};

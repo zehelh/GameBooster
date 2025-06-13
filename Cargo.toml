@@ -39,21 +39,23 @@ sysinfo = "0.30"
 poll-promise = "0.3"
 walkdir = "2.4"
 chrono = { version = "0.4", features = ["serde"] }
+thiserror = "1.0"
+async-process = "2.3"
+tracing-appender = "0.2"
+sys-info = "0.9" # Fetches OS information
+dirs = "5.0"     # Ajouté pour les chemins de répertoires multiplateformes
+
+# Windows APIs (surveillances réseau + QoS)
+[target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.59", features = [
     "Win32_Foundation",
-    "Win32_System_ProcessStatus", 
+    "Win32_System_ProcessStatus",
     "Win32_System_SystemInformation",
     "Win32_System_Threading",
     "Win32_System_Registry",
     "Win32_System_Services",
     "Win32_Security"
 ] }
-thiserror = "1.0"
-async-process = "2.3"
-tracing-appender = "0.2"
-
-# Windows APIs (surveillances réseau + QoS)
-[target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = [
     "winuser", "winsvc", "winnt", "processthreadsapi", "psapi", "handleapi",
     "shellapi", "winreg", "ntdef", "ntstatus", "lmcons",
@@ -62,4 +64,10 @@ winapi = { version = "0.3", features = [
 ] }
 
 [build-dependencies]
+# embed-resource est généralement pour Windows (icônes, manifestes)
+[target.'cfg(windows)'.build-dependencies]
 embed-resource = "2.4"
+
+# Ajout de libc pour la vérification is_elevated sur Linux
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"

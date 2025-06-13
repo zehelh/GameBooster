@@ -2,39 +2,66 @@
 
 use anyhow::Result;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
 pub async fn clean_temp_files() -> Result<u64> {
     let mut total_cleaned = 0u64;
-    
-    // System temp directories
-    let temp_dirs = vec![
-        std::env::temp_dir(),
-        Path::new("C:\\Windows\\Temp").to_path_buf(),
-        Path::new("C:\\Windows\\Prefetch").to_path_buf(),
-    ];
 
-    for temp_dir in temp_dirs {
+    // System temp directories
+    let mut temp_dirs: Vec<PathBuf> = vec![std::env::temp_dir()];
+
+    #[cfg(target_os = "windows")]
+    {
+        temp_dirs.push(Path::new("C:\\Windows\\Temp").to_path_buf());
+        temp_dirs.push(Path::new("C:\\Windows\\Prefetch").to_path_buf());
+    }
+    #[cfg(target_os = "linux")]
+    {
+        temp_dirs.push(PathBuf::from("/tmp"));
+        temp_dirs.push(PathBuf::from("/var/tmp"));
+        // Prefetch n'a pas d'équivalent direct universel sur Linux qui soit sûr à nettoyer de cette manière.
+    }
+
+    for temp_dir in &temp_dirs {
         if temp_dir.exists() {
-            total_cleaned += clean_directory(&temp_dir).await?;
+            total_cleaned += clean_directory(temp_dir).await?;
         }
     }
 
     // User-specific temp directories
-    if let Ok(user_profile) = std::env::var("USERPROFILE") {
-        let user_temp_dirs = vec![
-            format!("{}\\AppData\\Local\\Temp", user_profile),
-            format!("{}\\AppData\\Local\\Microsoft\\Windows\\Temporary Internet Files", user_profile),
-        ];
-
-        for temp_dir in user_temp_dirs {
-            let path = Path::new(&temp_dir);
-            if path.exists() {
-                total_cleaned += clean_directory(path).await?;
+    #[cfg(target_os = "windows")]
+    {
+        if let Ok(user_profile) = std::env::var("USERPROFILE") {
+            let user_temp_dirs_str = vec![
+                format!("{}\\AppData\\Local\\Temp", user_profile),
+                format!("{}\\AppData\\Local\\Microsoft\\Windows\\Temporary Internet Files", user_profile),
+            ];
+            for temp_dir_str in user_temp_dirs_str {
+                let path = Path::new(&temp_dir_str);
+                if path.exists() {
+                    total_cleaned += clean_directory(path).await?;
+                }
             }
         }
     }
+    #[cfg(target_os = "linux")]
+    {
+        if let Some(home_dir) = dirs::home_dir() {
+            let user_temp_dirs_path = vec![
+                home_dir.join(".cache"), // Un bon candidat général pour le cache utilisateur
+            ];
+            for path in user_temp_dirs_path {
+                if path.exists() {
+                    // Nettoyer le contenu de .cache peut être agressif,
+                    // il faudrait être plus sélectif ou permettre à l'utilisateur de configurer.
+                    // Pour l'instant, nous allons le parcourir.
+                    total_cleaned += clean_directory(&path).await?;
+                }
+            }
+        }
+    }
+
 
     Ok(total_cleaned)
 }
@@ -61,14 +88,45 @@ async fn clean_directory(dir: &Path) -> Result<u64> {
 pub fn get_temp_file_size() -> Result<u64> {
     let mut total_size = 0u64;
     
-    let temp_dirs = vec![
-        std::env::temp_dir(),
-        Path::new("C:\\Windows\\Temp").to_path_buf(),
-    ];
+    let mut temp_dirs_path: Vec<PathBuf> = vec![std::env::temp_dir()];
+    #[cfg(target_os = "windows")]
+    {
+        temp_dirs_path.push(Path::new("C:\\Windows\\Temp").to_path_buf());
+    }
+    #[cfg(target_os = "linux")]
+    {
+        temp_dirs_path.push(PathBuf::from("/tmp"));
+        temp_dirs_path.push(PathBuf::from("/var/tmp"));
+    }
 
-    for temp_dir in temp_dirs {
+
+    for temp_dir in temp_dirs_path {
         if temp_dir.exists() {
             total_size += calculate_directory_size(&temp_dir)?;
+        }
+    }
+    
+    #[cfg(target_os = "windows")]
+    {
+        if let Ok(user_profile) = std::env::var("USERPROFILE") {
+            let user_temp_dirs_str = vec![
+                format!("{}\\AppData\\Local\\Temp", user_profile),
+            ];
+            for temp_dir_str in user_temp_dirs_str {
+                let path = Path::new(&temp_dir_str);
+                if path.exists() {
+                    total_size += calculate_directory_size(path)?;
+                }
+            }
+        }
+    }
+    #[cfg(target_os = "linux")]
+    {
+        if let Some(home_dir) = dirs::home_dir() {
+            let user_temp_dir = home_dir.join(".cache");
+            if user_temp_dir.exists() {
+                total_size += calculate_directory_size(&user_temp_dir)?;
+            }
         }
     }
 
