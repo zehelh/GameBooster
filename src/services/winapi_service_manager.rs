@@ -2,6 +2,7 @@
 // Manages Windows services without spawning PowerShell processes
 
 use anyhow::{Result};
+use anyhow::anyhow;
 
 #[cfg(target_os = "windows")]
 use std::ffi::CString;

@@ -12,14 +12,14 @@ mod windows {
     pub fn setup() {
         // These println! calls tell Cargo to re-run the build script if these files change.
         println!("cargo:rerun-if-changed=app.rc");
-        println!("cargo:rerun-if-changed=src/assets/app_icon.ico");
+        println!("cargo:rerun-if-changed=assets/img/logo.ico");
         println!("cargo:rerun-if-changed=src/bin/NSudo.exe");
         println!("cargo:rerun-if-changed=src/bin/WinDivert.dll");
         println!("cargo:rerun-if-changed=src/bin/WinDivert.sys");
         println!("cargo:rerun-if-changed=src/bin/WinDivert64.sys");
 
         // Embed the application manifest and icon.
-        embed_resource::compile("app.rc", embed_resource::NONE);
+        let _ = embed_resource::compile("app.rc", embed_resource::NONE);
 
         // Determine the output directory (e.g., target/release or target/debug)
         let out_dir = env::var("OUT_DIR").expect("OUT_DIR not set");

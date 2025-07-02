@@ -1,6 +1,8 @@
 use anyhow::{Result};
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
+use sysinfo::System;
+use std::process::Command;
 #[cfg(windows)]
 use windows_sys::Win32::Foundation::{CloseHandle, BOOL, MAX_PATH};
 #[cfg(windows)]
@@ -14,9 +16,6 @@ use windows_sys::Win32::System::SystemInformation::{GlobalMemoryStatusEx, MEMORY
 use windows_sys::Win32::System::Threading::{
     GetCurrentProcess, OpenProcess, PROCESS_QUERY_INFORMATION, PROCESS_SET_QUOTA, PROCESS_VM_READ,
 };
-
-// Import from local utils module
-use crate::utils;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProcessCleaned {
@@ -200,9 +199,6 @@ pub fn clean_memory() -> Result<CleaningResults> {
 
 #[cfg(not(windows))]
 pub fn clean_memory() -> Result<CleaningResults> {
-    use std::process::Command;
-    use sysinfo::{System};
-
     let mut results = CleaningResults::new();
     let mut sys = System::new_all();
     sys.refresh_memory();
@@ -272,7 +268,6 @@ pub fn get_system_memory_info() -> (u64, u64) {
 pub fn get_system_memory_info() -> (u64, u64) {
     // Cette fonction semble moins utilisée que get_detailed_system_memory_info
     // mais on la met à jour pour la cohérence.
-    use sysinfo::{System};
     let mut sys = System::new_all();
     sys.refresh_memory();
     (sys.total_memory(), sys.total_memory() - sys.available_memory())
@@ -301,7 +296,6 @@ pub fn get_detailed_system_memory_info() -> SystemMemoryInfo {
 
 #[cfg(not(windows))]
 pub fn get_detailed_system_memory_info() -> SystemMemoryInfo {
-    use sysinfo::{System};
     let mut sys = System::new_all();
     sys.refresh_memory(); // Important: rafraîchir les données mémoire
 

@@ -7,6 +7,7 @@ description = "Game Booster - Windows performance optimizer with QoS network lim
 build = "build.rs"
 
 [build-dependencies]
+embed-resource = "3.0.4"
 winres = "0.1"
 
 # ONLY release builds with maximum optimizations
