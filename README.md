@@ -1,146 +1,144 @@
 # GameBooster 🚀
 
 ## Description
-GameBooster est un utilitaire d'optimisation PC pour Windows spécialement conçu pour améliorer les performances de gaming. L'application offre une interface graphique moderne et intuitive pour surveiller, nettoyer et optimiser votre système en temps réel.
+GameBooster is a comprehensive PC optimization utility for Windows specifically designed to improve gaming performance. The application provides a modern and intuitive graphical interface to monitor, clean, optimize, and schedule system maintenance tasks in real-time.
 
-## Fonctionnalités
-- 📊 Monitoring en temps réel de la RAM (Windows & Linux)
-- 📈 Visualisation graphique de l'utilisation mémoire (Windows & Linux)
-- 🔄 Nettoyage de la mémoire (Windows: `EmptyWorkingSet`, Linux: `drop_caches` si root)
-- ⚙️ Interface utilisateur moderne avec egui
-- 🐧 Détection de l'OS avec affichage conditionnel des fonctionnalités (ex: onglets spécifiques Windows marqués "WIP" sous Linux)
+## Features
+
+### 💾 Memory Management
+- 📊 Real-time RAM monitoring with graphical visualization
+- 🔄 Manual and automatic memory cleaning
+- 📈 Memory usage tracking and statistics
+
+### 🗂️ Advanced Disk Cleaning
+- ✅ Temporary files cleaning (system, user, browsers)
+- 🌐 Browser cache clearing (Chrome, Firefox, Edge)
+- 🖼️ Windows thumbnails cache removal
+- 🗑️ Recycle bin emptying
+- ⚙️ System cache cleaning (experimental)
+- 📊 Detailed space recovery reports
+
+### ⏰ Complete Task Scheduler
+- 🎯 **Task Types**: RAM cleaning, Disk cleaning, Windows Defender toggle
+- 📅 **Scheduling Options**:
+  - On Startup: Execute when application starts
+  - Interval: Every X minutes (5-1440 min)
+  - Daily: At specific time each day
+  - Weekly: On specific day and time
+  - On Condition: When thresholds are met
+- ⚙️ **Management**: Create, edit, delete, enable/disable tasks
+- 📊 **Statistics**: Success/failure tracking and execution history
+- 💾 **Persistence**: Tasks saved automatically and restored on startup
+
+### 🚀 Windows Integration
+- 🔄 Auto-start with Windows (configurable in Settings)
+- 🔽 Start minimized option
+- ⏰ Auto-start scheduler option
+- ⏱️ Configurable startup delay
+- 🔧 Windows registry integration
+
+### 🛡️ Windows Services Management
+- 🛡️ Windows Defender toggle (temporary/permanent with warnings)
+- ⚙️ Service status monitoring and control
+
+### 🌐 Network Management (WIP)
+- 🚧 Real-time network process monitoring (in development)
+- 🚧 Bandwidth limiting for specific processes (in development)
+- 🚧 QoS policy management (experimental)
+
+### 🎨 Modern User Interface
+- 🌓 Dark/Light theme support
+- 📱 Responsive and intuitive design
+- 🎛️ Real-time status indicators
+- 📈 Visual feedback and progress tracking
 
 ## Roadmap
-- **Nettoyage de disque avancé (Windows & Linux):**
-    - Suppression des fichiers temporaires (système, utilisateur, navigateurs).
-    - Vidage des caches (navigateurs, applications).
-    - Suppression des miniatures Windows.
-- **Scheduler avancé (Windows & Linux):**
-    - Planification du nettoyage de RAM.
-    - Planification du nettoyage de disque.
-    - Options de planification : au démarrage de la session, toutes les X heures, etc.
-- **Optimisation des services Windows:**
-    - Désactivation (temporaire/permanente avec avertissements) de Windows Defender.
-    - Optimisation d'autres services pour le gaming (avec prudence).
-- **Network Limiter (Windows & Linux):**
-    - Lister les processus non-Windows et leur utilisation réseau.
-    - Permettre de limiter ou couper le débit réseau pour des processus spécifiques.
-- **CPU Limiter (Windows & Linux):**
-    - Changer les priorité CPU des processus et leurs imposer des limitation.
-- **Création d'un installeur (Windows & Linux).**
-- Portage MAC OS (à plus long terme).
 
-## Prérequis
-L'application est développée en Rust. Assurez-vous d'avoir Rust et Cargo installés.
+### ✅ Completed Features
+- ✅ **Advanced disk cleaning** - Complete with granular options
+- ✅ **Advanced Scheduler** - Full CRUD operations with multiple scheduling types
+- ✅ **Windows services optimization** - Defender management implemented
 
-### Pour la compilation croisée Windows vers Linux (et potentiellement d'autres cibles) avec Zig:
+### 🔄 In Progress / Planned
+- **Network Limiter (WIP):**
+  - QoS-based bandwidth control for processes
+  - Real-time network process monitoring
+  - Process-specific bandwidth limiting
+- **CPU Limiter:**
+  - Change CPU priorities of processes
+  - Impose CPU usage limitations
+  - Process affinity management
+- **Enhanced Network Features:**
+  - Advanced traffic shaping
+  - Application-specific network profiles
+  - Network usage analytics
+- **System Optimization:**
+  - GPU memory cleaning
+  - Registry optimization
+  - Startup programs management
+- **Gaming Profiles:**
+  - Pre-configured optimization profiles for popular games
+  - One-click performance mode activation
+- **Advanced Reporting:**
+  - System performance analytics
+  - Optimization history and trends
+  - Detailed system health reports
+- **Creation of an installer** with auto-updater
 
-Il est recommandé d'utiliser Zig comme linker pour faciliter la compilation croisée, notamment pour la glibc.
-
-1.  **Installer Zig:**
-    Téléchargez la dernière version de Zig pour votre système depuis [ziglang.org/download/](https://ziglang.org/download/).
-    Extrayez l'archive et ajoutez le répertoire de Zig à votre `PATH`.
-    *Alternative (non recommandée pour ce projet à cause de problèmes de version/path):* `sudo snap install zig --classic --beta`
-
-2.  **Configurer Cargo pour utiliser Zig:**
-    Créez (ou modifiez) le fichier `.cargo/config.toml` dans votre répertoire projet ou global Cargo avec le contenu suivant :
-
-    ```toml
-    [target.x86_64-unknown-linux-gnu]
-    linker = "zig"
-    rustflags = ["-C", "linker-flavor=ld.lld", "-C", "link-arg=-fuse-ld=lld"]
-
-    # Si vous utilisez un wrapper script (voir ci-dessous)
-    # linker = "/chemin/vers/votre/zig_cc_wrapper.sh"
-    # rustflags = [] # Les flags sont dans le wrapper
-    ```
-
-3.  **(Optionnel mais recommandé) Script Wrapper pour Zig:**
-    Pour plus de flexibilité et pour gérer les cas où `zig cc` a besoin d'arguments spécifiques ou si `zig` n'est pas directement dans le PATH du processus de build de Cargo, vous pouvez utiliser un script wrapper.
-    Créez un fichier `zig_cc_wrapper.sh` (ou un nom similaire) quelque part dans votre système (par exemple, `/usr/local/bin/` ou dans le répertoire de votre projet) :
-
-    ```bash
-    #!/bin/bash
-    # Wrapper pour utiliser zig comme linker avec Cargo
-    # Assurez-vous que ce script est exécutable (chmod +x zig_cc_wrapper.sh)
-    
-    # Chemin vers votre exécutable zig si non standard
-    # ZIG_PATH="/chemin/vers/votre/zig/zig"
-    ZIG_PATH="zig" # Si zig est dans le PATH
-
-    # Détecter la cible à partir des arguments
-    TARGET=""
-    for arg in "$@"; do
-        if [[ "$arg" == "--target="* ]]; then
-            TARGET="${arg#--target=}"
-            break
-        fi
-    done
-
-    if [ -z "$TARGET" ]; then
-        # Essayer de déduire la cible si non fournie explicitement
-        # Ceci est une heuristique et pourrait nécessiter des ajustements
-        if [[ "$(uname -s)" == "Linux" && "$(uname -m)" == "x86_64" ]]; then
-            TARGET="x86_64-linux-gnu"
-        elif [[ "$(uname -s)" == "Darwin" ]]; then
-            TARGET="$(uname -m)-apple-darwin"
-        fi
-        # Ajoutez d'autres détections si nécessaire
-    fi
-
-    # Exécuter zig cc avec les arguments et les flags nécessaires
-    # Pour Linux, spécifier la version de glibc peut être crucial
-    if [[ "$TARGET" == *"linux-gnu"* ]]; then
-        # Adaptez la version de glibc si nécessaire (ex: 2.17, 2.28, etc.)
-        # Utilisez `zig targets` pour voir les options disponibles
-        exec $ZIG_PATH cc -target "$TARGET-gnu.2.28" "$@"
-    elif [[ "$TARGET" == *"windows-msvc"* ]]; then
-        # Pour Windows, zig peut aussi cross-compiler
-        exec $ZIG_PATH cc -target "$TARGET" "$@"
-    else
-        # Pour les autres cibles ou si la cible n'est pas détectée, utiliser le comportement par défaut
-        exec $ZIG_PATH cc "$@"
-    fi
-    ```
-    N'oubliez pas de rendre ce script exécutable (`chmod +x zig_cc_wrapper.sh`) et d'ajuster le `linker` dans `.cargo/config.toml` pour pointer vers ce script.
+## Prerequisites
+The application is developed in Rust. Make sure you have Rust and Cargo installed.
 
 ## Installation
-1. Clonez le repository :
+1. Clone the repository:
 ```bash
-git clone https://github.com/votre-username/GameBooster.git
+git clone https://github.com/your-username/GameBooster.git
 cd GameBooster
 ```
-2. Compilez le projet :
+2. Compile the project:
+```bash
+cargo build --release
+```
 
-   Pour Windows (natif) :
-   ```bash
-   cargo build --release
-   ```
-
-   Pour Linux (compilation native ou croisée depuis Windows/macOS avec Zig configuré) :
-   ```bash
-   cargo build --release --target x86_64-unknown-linux-gnu
-   ```
-
-## Utilisation
-Lancez l'application depuis le dossier `target/release` (pour Windows) ou `target/x86_64-unknown-linux-gnu/release` (pour Linux).
-
-Pour Windows:
+## Usage
+Launch the application from the `target/release` folder:
 ```bash
 ./gamebooster.exe 
 ```
 
-Pour Linux:
-```bash
-./gamebooster
-```
-L'application nécessite des droits administrateur (Windows) ou root (Linux) pour certaines fonctionnalités (nettoyage RAM avancé, gestion des services, etc.).
+### Quick Start Guide
+1. **Memory Tab**: Monitor RAM usage and perform manual cleaning
+2. **Disk Tab**: Scan and clean disk space with customizable options
+3. **Scheduler Tab**: Create automated maintenance tasks
+4. **Services Tab**: Manage Windows Defender and other services
+5. **Settings Tab**: Configure auto-startup and application preferences
+
+### Administrator Rights
+The application requires administrator rights for:
+- Windows Defender management
+- System file cleaning
+- Registry modifications for auto-startup
+
+## Architecture
+- **Frontend**: egui-based modern GUI
+- **Backend**: Multi-threaded Rust with async operations
+- **Persistence**: JSON-based configuration and task storage
+- **Integration**: Windows API for system management
+- **Network**: WinDivert for traffic management
 
 ## Contribution
-Les contributions sont les bienvenues ! N'hésitez pas à ouvrir une issue ou une pull request.
+Contributions are welcome! Feel free to open an issue or a pull request.
 
-## Licence
-Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
+### Development Setup
+1. Install Rust toolchain
+2. Clone the repository
+3. Run `cargo build` for development builds
+4. Use `cargo test` to run the test suite
+
+## License
+This project is licensed under the MIT License. See the `LICENSE` file for more details.
 
 ## Changelog
-Consultez le fichier `CHANGELOG.md` pour suivre l'évolution du projet.
+Check the `CHANGELOG.md` file to follow the project's evolution.
+
+## Support
+For issues, feature requests, or questions, please open an issue on GitHub.

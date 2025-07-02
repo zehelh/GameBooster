@@ -2,27 +2,21 @@
 // Manages PowerShell commands execution in background without visible windows
 
 use anyhow::Result;
+use async_process::Command;
 use thiserror::Error;
 
-#[cfg(target_os = "windows")]
-use async_process::Command;
-
 // Windows constant to hide the window
-#[cfg(target_os = "windows")]
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 #[derive(Debug, Error)]
 pub enum PowerShellExecutionError {
-    #[error("La commande PowerShell a échoué avec le code de sortie {0}. Erreur : {1}")]
+    #[error("PowerShell command failed with exit code {0}. Error: {1}")]
     CommandFailed(i32, String),
-    #[error("Erreur d'entrée/sortie lors de l'exécution de la commande : {0}")]
+    #[error("I/O error while executing command: {0}")]
     IoError(#[from] std::io::Error),
-    #[error("Fonctionnalité non disponible sur cette plateforme")]
-    NotAvailable,
 }
 
-/// Exécute une commande PowerShell de manière asynchrone et cachée.
-#[cfg(target_os = "windows")]
+/// Execute a PowerShell command asynchronously and hidden.
 pub async fn run_powershell_command(command: &str) -> Result<String, PowerShellExecutionError> {
     let output = Command::new("powershell")
         .args([
@@ -44,10 +38,4 @@ pub async fn run_powershell_command(command: &str) -> Result<String, PowerShellE
             String::from_utf8_lossy(&output.stderr).to_string(),
         ))
     }
-}
-
-#[cfg(not(target_os = "windows"))]
-pub async fn run_powershell_command(command: &str) -> Result<String, PowerShellExecutionError> {
-    let _ = command; // Mark as used
-    Err(PowerShellExecutionError::NotAvailable)
 }

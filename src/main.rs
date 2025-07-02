@@ -8,26 +8,44 @@ mod scheduler;
 mod services;
 mod theme;
 mod ui;
-mod utils; // Added utils module
+mod utils;
 
-use ui::app::CleanRamApp;
+use egui::IconData;
+use image::io::Reader as ImageReader;
+use std::io::Cursor;
+use std::sync::Arc;
 use tracing::{info, warn};
 use tracing_subscriber::{layer::SubscriberExt, EnvFilter};
+use ui::app::CleanRamApp;
 
 fn main() {
     let _guard = setup_logging();
 
     info!("🚀 Initializing GameBooster application...");
 
-    // Test QoS automatique au démarrage (mode release uniquement)
+    // Check for startup arguments
+    let (is_minimized, should_auto_start_scheduler) = crate::scheduler::TaskScheduler::check_startup_args();
+    
+    if is_minimized {
+        info!("🔽 Starting in minimized mode (Windows startup)");
+    }
+    
+    if should_auto_start_scheduler {
+        info!("⏰ Auto-starting scheduler as configured");
+    }
+
+    // Automatic QoS system test at startup (release mode only)
     #[cfg(not(debug_assertions))]
     test_qos_system();
+
+    let icon = load_icon().expect("Failed to load application icon.");
 
     let native_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([1200.0, 700.0])
             .with_min_inner_size([900.0, 500.0])
             .with_title("GameBooster - Network QoS Ready")
+            .with_icon(Arc::new(icon)) // Set the window icon
             .with_resizable(true),
         centered: true,
         ..Default::default()
@@ -38,8 +56,15 @@ fn main() {
     if let Err(e) = eframe::run_native(
         "GameBooster",
         native_options,
-        Box::new(|cc| {
-            let app = CleanRamApp::new(cc);
+        Box::new(move |cc| {
+            let mut app = CleanRamApp::new(cc);
+            
+            // Auto-start scheduler if configured
+            if should_auto_start_scheduler {
+                app.scheduler_running = true;
+                info!("✅ Scheduler auto-started");
+            }
+            
             Box::new(app)
         }),
     ) {
@@ -47,23 +72,37 @@ fn main() {
     }
 }
 
-/// Test automatique du système QoS au démarrage
+/// Loads the application icon from the assets folder.
+fn load_icon() -> Result<IconData, Box<dyn std::error::Error>> {
+    let bytes = include_bytes!("../assets/img/logo.png");
+    let image = ImageReader::new(Cursor::new(bytes))
+        .with_guessed_format()?
+        .decode()?;
+    let image_buffer = image.to_rgba8();
+    Ok(IconData {
+        rgba: image_buffer.into_raw(),
+        width: image.width(),
+        height: image.height(),
+    })
+}
+
+/// Automatic QoS system test at startup
 #[cfg(not(debug_assertions))]
 fn test_qos_system() {
     use crate::network::NetworkLimiter;
     
-    info!("🧪 Test système QoS automatique...");
+    info!("🧪 Automatic QoS system test...");
     
     match NetworkLimiter::new() {
         Ok(mut limiter) => {
-            info!("✅ NetworkLimiter créé");
+            info!("✅ NetworkLimiter created");
             
             match limiter.scan_network_processes() {
                 Ok(()) => {
                     let processes = limiter.get_processes();
-                    info!("✅ Scan réseau: {} processus détectés", processes.len());
+                    info!("✅ Network scan: {} processes detected", processes.len());
                     
-                    // Afficher quelques processus détectés
+                    // Display some detected processes
                     for (i, process) in processes.iter().take(3).enumerate() {
                         info!("  {}. {} (PID: {}) - {}↓ {}↑", 
                             i + 1, 
@@ -74,31 +113,31 @@ fn test_qos_system() {
                         );
                     }
                     
-                    // Test vérification politiques existantes
+                    // Test existing policies verification
                     match limiter.verify_qos_policies() {
                         Ok(policies) => {
                             if policies.is_empty() {
-                                info!("📋 Aucune politique QoS GameBooster active");
+                                info!("📋 No active GameBooster QoS policy");
                             } else {
-                                info!("📋 {} politiques QoS GameBooster actives", policies.len());
+                                info!("📋 {} active GameBooster QoS policies", policies.len());
                             }
                         }
                         Err(e) => {
-                            warn!("⚠️ Impossible de vérifier les politiques QoS: {}", e);
+                            warn!("⚠️ Unable to verify QoS policies: {}", e);
                         }
                     }
                 }
                 Err(e) => {
-                    warn!("⚠️ Erreur scan réseau: {}", e);
+                    warn!("⚠️ Network scan error: {}", e);
                 }
             }
         }
         Err(e) => {
-            warn!("⚠️ Impossible de créer NetworkLimiter: {}", e);
+            warn!("⚠️ Unable to create NetworkLimiter: {}", e);
         }
     }
     
-    info!("🎯 Système QoS prêt pour utilisation");
+    info!("🎯 QoS system ready for use");
 }
 
 fn setup_logging() -> Option<tracing_appender::non_blocking::WorkerGuard> {

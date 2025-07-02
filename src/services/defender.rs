@@ -64,23 +64,27 @@ impl DefenderService {
                 })
             }
         }
+    }    /// Disable Defender immediately with detailed feedback
+    pub fn disable_immediately() -> Result<DefenderStatus> {
+        let rt = tokio::runtime::Runtime::new()?;
+        rt.block_on(Self::disable_immediately_async())
     }
 
-    /// Disable Defender immediately with detailed feedback
-    pub fn disable_immediately() -> Result<DefenderStatus> {
-        let results = DefenderManager::disable_defender_immediately()?;
+    /// Async version for internal use
+    async fn disable_immediately_async() -> Result<DefenderStatus> {
+        let results = DefenderManager::disable_defender_immediately().await?;
         
         // Wait a moment for changes to take effect
-        std::thread::sleep(std::time::Duration::from_millis(2000));
+        tokio::time::sleep(std::time::Duration::from_millis(2000)).await;
         
         let mut status = Self::get_status().unwrap_or_default();
         status.last_operation_results = results;
         
         // Update status text based on results
         if !status.real_time_protection {
-            status.status_text = "🎉 DÉSACTIVÉ - Toutes protections arrêtées".to_string();
+            status.status_text = "🎉 DISABLED - All protections stopped".to_string();
         } else {
-            status.status_text = "⚠️ PARTIELLEMENT DÉSACTIVÉ - Vérifiez les résultats".to_string();
+            status.status_text = "⚠️ PARTIALLY DISABLED - Check results".to_string();
         }
         
         Ok(status)
@@ -88,10 +92,16 @@ impl DefenderService {
 
     /// Enable Defender immediately with detailed feedback
     pub fn enable_immediately() -> Result<DefenderStatus> {
-        let results = DefenderManager::enable_defender_immediately()?;
+        let rt = tokio::runtime::Runtime::new()?;
+        rt.block_on(Self::enable_immediately_async())
+    }
+
+    /// Async version for internal use
+    async fn enable_immediately_async() -> Result<DefenderStatus> {
+        let results = DefenderManager::enable_defender_immediately().await?;
         
         // Wait a moment for changes to take effect
-        std::thread::sleep(std::time::Duration::from_millis(2000));
+        tokio::time::sleep(std::time::Duration::from_millis(2000)).await;
         
         let mut status = Self::get_status().unwrap_or_default();
         status.last_operation_results = results;
