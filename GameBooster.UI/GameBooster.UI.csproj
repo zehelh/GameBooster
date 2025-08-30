@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GameBooster.Core\GameBooster.Core.csproj" />
+    <ProjectReference Include="..\GameBooster.Common\GameBooster.Common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.0.5" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.0.5" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.0.5" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.0.5" />
+    <PackageReference Include="Avalonia.ReactiveUI" Version="11.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+    <PackageReference Include="System.Reactive" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\logo.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <ApplicationIcon>Assets\logo.ico</ApplicationIcon>
+  </PropertyGroup>
+
+</Project>

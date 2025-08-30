@@ -1,9 +1,0 @@
-// app.rc - Resource script for GameBooster
-
-// Application icon
-1 ICON "assets/img/logo.ico"
-
-// Embed the application manifest
-// RT_MANIFEST is defined as 24 by the Windows SDK headers
-// 1 is a common resource ID for the application manifest
-1 RT_MANIFEST "app.manifest"

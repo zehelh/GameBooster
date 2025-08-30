@@ -1,0 +1,318 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="GameBooster.UI.Views.MemoryView">
+    
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+            <TextBlock Text="🧠 Gestion de la Mémoire" 
+                       FontSize="24" FontWeight="Bold" 
+                       Foreground="White"
+                       Margin="0,0,0,10"/>
+            <TextBlock Text="Surveillez et optimisez l'utilisation de la mémoire système" 
+                       FontSize="14" Opacity="0.7" 
+                       Foreground="#CCCCCC"/>
+        </StackPanel>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Memory Management Panel -->
+            <StackPanel Grid.Column="0" Spacing="20" Margin="0,0,10,0">
+                
+                <!-- Memory Status Card -->
+                <Border Background="#1A1A2E" 
+                        CornerRadius="8" 
+                        Padding="20"
+                        BorderBrush="#333" 
+                        BorderThickness="1">
+                    <StackPanel Spacing="15">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="📊" FontSize="24"/>
+                            <TextBlock Text="État de la Mémoire" 
+                                       FontSize="18" FontWeight="Bold" 
+                                       Foreground="White"/>
+                        </StackPanel>
+                        
+                        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto">
+                            <!-- Total Memory -->
+                            <Border Grid.Column="0" Grid.Row="0"
+                                    Background="#0F0F23" 
+                                    CornerRadius="6" 
+                                    Padding="15">
+                                <StackPanel>
+                                    <TextBlock Text="Mémoire Totale" 
+                                               FontSize="12" Opacity="0.7"/>
+                                    <TextBlock Text="{Binding MemoryInfo.TotalPhysical, StringFormat='{}{0:F1} GB'}" 
+                                               FontSize="18" FontWeight="Bold" 
+                                               Foreground="White"/>
+                                </StackPanel>
+                            </Border>
+                            
+                            <!-- Available Memory -->
+                            <Border Grid.Column="1" Grid.Row="0"
+                                    Background="#0F0F23" 
+                                    CornerRadius="6" 
+                                    Padding="15">
+                                <StackPanel>
+                                    <TextBlock Text="Mémoire Disponible" 
+                                               FontSize="12" Opacity="0.7"/>
+                                    <TextBlock Text="{Binding MemoryInfo.AvailablePhysical, StringFormat='{}{0:F1} GB'}" 
+                                               FontSize="18" FontWeight="Bold" 
+                                               Foreground="LightGreen"/>
+                                </StackPanel>
+                            </Border>
+                            
+                            <!-- Used Memory -->
+                            <Border Grid.Column="0" Grid.Row="1"
+                                    Background="#0F0F23" 
+                                    CornerRadius="6" 
+                                    Padding="15">
+                                <StackPanel>
+                                    <TextBlock Text="Mémoire Utilisée" 
+                                               FontSize="12" Opacity="0.7"/>
+                                    <TextBlock Text="{Binding MemoryInfo.UsedPhysical, StringFormat='{}{0:F1} GB'}" 
+                                               FontSize="18" FontWeight="Bold" 
+                                               Foreground="#FFA500"/>
+                                </StackPanel>
+                            </Border>
+                            
+                            <!-- Usage Percentage -->
+                            <Border Grid.Column="1" Grid.Row="1"
+                                    Background="#0F0F23" 
+                                    CornerRadius="6" 
+                                    Padding="15">
+                                <StackPanel>
+                                    <TextBlock Text="Utilisation" 
+                                               FontSize="12" Opacity="0.7"/>
+                                    <TextBlock Text="{Binding MemoryInfo.UsagePercentage, StringFormat='{}{0:P1}'}" 
+                                               FontSize="18" FontWeight="Bold" 
+                                               Foreground="#00D4FF"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                        
+                        <!-- Memory Usage Progress Bar -->
+                        <StackPanel Spacing="5">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Grid.Column="0" Text="Utilisation de la mémoire" 
+                                           FontSize="12" Opacity="0.7"/>
+                                <TextBlock Grid.Column="1" 
+                                           Text="{Binding MemoryInfo.UsagePercentage, StringFormat='{}{0:P1}'}" 
+                                           FontSize="12" Opacity="0.7"/>
+                            </Grid>
+                            <ProgressBar Value="{Binding MemoryInfo.UsagePercentage}" 
+                                         Maximum="1"
+                                         Height="8"
+                                         Background="#333"
+                                         Foreground="#00D4FF"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Memory Actions -->
+                <Grid ColumnDefinitions="*,*">
+                    <!-- Clean Memory Card -->
+                    <Border Background="#1A1A2E" 
+                            CornerRadius="8" 
+                            Padding="20"
+                            BorderBrush="#333" 
+                            BorderThickness="1">
+                        <StackPanel Spacing="15">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <TextBlock Text="🧹" FontSize="24"/>
+                                <TextBlock Text="Nettoyage Rapide" 
+                                           FontSize="16" FontWeight="Bold" 
+                                           Foreground="White"/>
+                            </StackPanel>
+                            
+                            <TextBlock Text="Libère la mémoire inutilisée et force le garbage collection" 
+                                       FontSize="12" Opacity="0.7" 
+                                       TextWrapping="Wrap"/>
+                            
+                            <Button Content="Nettoyer Maintenant" 
+                                    Command="{Binding CleanMemoryCommand}"
+                                    Background="#00D4FF"
+                                    Foreground="Black"
+                                    FontWeight="Bold"
+                                    Padding="15,8"
+                                    CornerRadius="6"
+                                    HorizontalAlignment="Stretch"/>
+                            
+                            <ProgressBar IsVisible="{Binding IsCleaning}"
+                                       IsIndeterminate="True"
+                                       Background="#333"
+                                       Foreground="#00D4FF"
+                                       Height="4"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Optimize Memory Card -->
+                    <Border Background="#1A1A2E" 
+                            CornerRadius="8" 
+                            Padding="20"
+                            BorderBrush="#333" 
+                            BorderThickness="1">
+                        <StackPanel Spacing="15">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <TextBlock Text="⚡" FontSize="24"/>
+                                <TextBlock Text="Optimisation Avancée" 
+                                           FontSize="16" FontWeight="Bold" 
+                                           Foreground="White"/>
+                            </StackPanel>
+                            
+                            <TextBlock Text="Optimise l'utilisation de la mémoire système et libère les caches" 
+                                       FontSize="12" Opacity="0.7" 
+                                       TextWrapping="Wrap"/>
+                            
+                            <Button Content="Optimiser" 
+                                    Command="{Binding OptimizeMemoryCommand}"
+                                    Background="#FFA500"
+                                    Foreground="Black"
+                                    FontWeight="Bold"
+                                    Padding="15,8"
+                                    CornerRadius="6"
+                                    HorizontalAlignment="Stretch"/>
+                            
+                            <ProgressBar IsVisible="{Binding IsCleaning}"
+                                       IsIndeterminate="True"
+                                       Background="#333"
+                                       Foreground="#FFA500"
+                                       Height="4"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Last Cleanup Result -->
+                <Border Background="#1A1A2E" 
+                        CornerRadius="8" 
+                        Padding="20"
+                        BorderBrush="#333" 
+                        BorderThickness="1"
+                        IsVisible="{Binding LastCleanupResult, Converter={x:Static ObjectConverters.IsNotNull}}">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="📋 Dernier Résultat" 
+                                   FontSize="16" FontWeight="Bold" 
+                                   Foreground="White"/>
+                        <TextBlock Text="{Binding LastCleanupResult.SpaceFreed, StringFormat='Espace libéré: {0:F1} MB'}" 
+                                   FontSize="14" 
+                                   Foreground="LightGreen"/>
+                        <TextBlock Text="{Binding LastCleanupResult.Timestamp, StringFormat='Effectué le: {0:dd/MM/yyyy HH:mm}'}" 
+                                   FontSize="12" Opacity="0.7"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- Top Processes Panel -->
+            <Border Grid.Column="1" 
+                    Background="#1A1A2E" 
+                    CornerRadius="8" 
+                    Padding="20"
+                    BorderBrush="#333" 
+                    BorderThickness="1">
+                <StackPanel Spacing="15">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="🔍" FontSize="20"/>
+                        <TextBlock Text="Top Processus" 
+                                   FontSize="16" FontWeight="Bold" 
+                                   Foreground="White"/>
+                    </StackPanel>
+                    
+                    <TextBlock Text="Processus utilisant le plus de mémoire" 
+                               FontSize="12" Opacity="0.7"/>
+                    
+                    <ScrollViewer MaxHeight="400" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding TopProcesses}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#0F0F23" 
+                                            Padding="12" 
+                                            Margin="0,4" 
+                                            CornerRadius="6">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="{Binding Name}" 
+                                                           FontSize="12" 
+                                                           FontWeight="Bold"
+                                                           Foreground="White"/>
+                                                <TextBlock Text="{Binding MemoryUsage, StringFormat='{}{0:F1} MB'}" 
+                                                           FontSize="10" 
+                                                           Foreground="#AAAAAA"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" 
+                                                        HorizontalAlignment="Right">
+                                                <TextBlock Text="{Binding ProcessId, StringFormat='PID: {0}'}" 
+                                                           FontSize="10" 
+                                                           Foreground="#666"/>
+                                                <TextBlock Text="{Binding CpuUsage, StringFormat='CPU: {0:F1}%'}" 
+                                                           FontSize="10" 
+                                                           Foreground="#666"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <Button Content="🔄 Actualiser" 
+                            Command="{Binding RefreshCommand}"
+                            Background="#333" 
+                            Foreground="White"
+                            FontSize="12"
+                            Padding="12,6"
+                            CornerRadius="6"
+                            HorizontalAlignment="Stretch"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="2" 
+                Background="#1A1A2E" 
+                CornerRadius="6" 
+                Margin="0,10,0,0" 
+                Padding="15,10"
+                BorderBrush="#333" 
+                BorderThickness="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10">
+                    <TextBlock Text="📡" FontSize="16"/>
+                    <TextBlock Text="Surveillance en temps réel" 
+                               FontSize="12" 
+                               Foreground="White"/>
+                    <TextBlock Text="{Binding IsMonitoring, Converter={x:Static BoolConverters.Not}, ConverterParameter=Arrêtée, FallbackValue=Active}" 
+                               FontSize="12" 
+                               Foreground="{Binding IsMonitoring, Converter={x:Static BoolConverters.Not}, ConverterParameter=#FF4444, FallbackValue=#00D4FF}"/>
+                </StackPanel>
+                
+                <Button Grid.Column="1" 
+                        Content="{Binding IsMonitoring, Converter={x:Static BoolConverters.Not}, ConverterParameter=Activer, FallbackValue=Arrêter}" 
+                        Command="{Binding ToggleMonitoringCommand}"
+                        Background="#333" 
+                        Foreground="White"
+                        FontSize="11"
+                        Padding="8,4"
+                        CornerRadius="4"/>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

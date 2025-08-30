@@ -1,39 +1,70 @@
-# Fichiers générés par Rust
-/target/
-**/*.rs.bk
-Cargo.lock
+# .NET Build outputs
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]uild/
+msbuild.log
 
-# Fichiers de l'IDE
-.idea/
+# Visual Studio files
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+*.[Cc]ache
+!?*.[Cc]ache/
 .vscode/
-*.swp
-*.swo
-.github/
 
-# Fichiers de build Windows
-*.exe
-*.pdb
-*.dll
-*.lib
-*.exp
+# ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
 
-# Fichiers temporaires
-*.tmp
-*.temp
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+TestResults/
+
+# Avalonia
+.avalonia/
+
+# NuGet Packages
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+
+# Application specific files
+appsettings.Development.json
 *.log
+logs/
 
-# Fichiers de sauvegarde
+# Windows specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+
+# Backup files
 *~
 *.bak
+*.swp
 
-# Fichiers spécifiques au système d'exploitation
-.DS_Store
-Thumbs.db
-
-# Fichiers de configuration locaux
-.env
-.env.local
-
-# Dossiers de dépendances
-/vendor/
-/dependancies/
+# instructions
+.github/

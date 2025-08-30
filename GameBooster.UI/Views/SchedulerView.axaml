@@ -1,0 +1,278 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="GameBooster.UI.Views.SchedulerView">
+    
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+            <TextBlock Text="⏰ Planificateur de Tâches" 
+                       FontSize="24" FontWeight="Bold" 
+                       Margin="0,0,0,10"/>
+            <TextBlock Text="Gérez vos tâches d'optimisation automatiques" 
+                       FontSize="14" Opacity="0.7"/>
+        </StackPanel>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Tasks List -->
+            <Border Grid.Column="0" 
+                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                    CornerRadius="8" 
+                    Margin="0,0,10,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- List Header -->
+                    <Border Grid.Row="0" 
+                            Background="{DynamicResource SystemAccentColor}"
+                            CornerRadius="8,8,0,0">
+                        <Grid Margin="15,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBlock Grid.Column="0" 
+                                       Text="Tâches Planifiées" 
+                                       FontWeight="Bold" 
+                                       Foreground="White"/>
+                            
+                            <StackPanel Grid.Column="1" 
+                                        Orientation="Horizontal" 
+                                        Spacing="10">
+                                <Button Content="🔄" 
+                                        Command="{Binding RefreshTasksCommand}"
+                                        Width="32" Height="32"
+                                        Background="Transparent"
+                                        Foreground="White"/>
+                                <Button Content="➕" 
+                                        Command="{Binding AddTaskCommand}"
+                                        Width="32" Height="32"
+                                        Background="Transparent"
+                                        Foreground="White"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Tasks List -->
+                    <ScrollViewer Grid.Row="1" 
+                                  VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding Tasks}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="10,5" 
+                                            Background="{DynamicResource SystemControlBackgroundBaseMediumBrush}"
+                                            CornerRadius="6"
+                                            Padding="15">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Task Info -->
+                                            <StackPanel Grid.Row="0" Grid.Column="0">
+                                                <TextBlock Text="{Binding Name}" 
+                                                           FontWeight="Bold" 
+                                                           FontSize="16"/>
+                                                <TextBlock Text="{Binding Description}" 
+                                                           Opacity="0.7" 
+                                                           Margin="0,5,0,0"/>
+                                            </StackPanel>
+
+                                            <!-- Status -->
+                                            <StackPanel Grid.Row="0" Grid.Column="1" 
+                                                        HorizontalAlignment="Right">
+                                                <Border Background="{Binding IsEnabled, Converter={x:Static BoolConverters.Not}, ConverterParameter=#FF4444, FallbackValue=#00D4FF}"
+                                                        CornerRadius="12" 
+                                                        Padding="8,4">
+                                                    <TextBlock Text="{Binding IsEnabled, Converter={x:Static BoolConverters.Not}, ConverterParameter=Désactivée, FallbackValue=Active}"
+                                                               FontSize="12" 
+                                                               Foreground="White"/>
+                                                </Border>
+                                            </StackPanel>
+
+                                            <!-- Task Details -->
+                                            <StackPanel Grid.Row="1" Grid.Column="0" 
+                                                        Margin="0,10,0,0" 
+                                                        Orientation="Horizontal" 
+                                                        Spacing="20">
+                                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                                    <TextBlock Text="Type:" Opacity="0.7"/>
+                                                    <TextBlock Text="{Binding Type}"/>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                                    <TextBlock Text="Fréquence:" Opacity="0.7"/>
+                                                    <TextBlock Text="{Binding Frequency}"/>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                                    <TextBlock Text="Heure:" Opacity="0.7"/>
+                                                    <TextBlock Text="{Binding ExecutionTime, StringFormat='{}{0:hh\\:mm}'}"/>
+                                                </StackPanel>
+                                            </StackPanel>
+
+                                            <!-- Last Execution -->
+                                            <StackPanel Grid.Row="2" Grid.Column="0" 
+                                                        Margin="0,10,0,0">
+                                                <TextBlock Text="{Binding LastExecuted, StringFormat='Dernière exécution: {0:dd/MM/yyyy HH:mm}'}" 
+                                                           Opacity="0.6" 
+                                                           FontSize="12"/>
+                                                <TextBlock Text="{Binding NextExecution, StringFormat='Prochaine exécution: {0:dd/MM/yyyy HH:mm}'}" 
+                                                           Opacity="0.6" 
+                                                           FontSize="12"/>
+                                            </StackPanel>
+
+                                            <!-- Actions -->
+                                            <StackPanel Grid.Row="2" Grid.Column="1" 
+                                                        Orientation="Horizontal" 
+                                                        Spacing="5" 
+                                                        HorizontalAlignment="Right">
+                                                <Button Content="▶️" 
+                                                        Command="{Binding DataContext.ExecuteTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Width="28" Height="28"
+                                                        Background="Transparent"/>
+                                                <Button Content="✏️" 
+                                                        Command="{Binding DataContext.EditTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Width="28" Height="28"
+                                                        Background="Transparent"/>
+                                                <Button Content="🗑️" 
+                                                        Command="{Binding DataContext.DeleteTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Width="28" Height="28"
+                                                        Background="Transparent"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <!-- Empty State -->
+                    <TextBlock Grid.Row="1" 
+                               Text="Aucune tâche planifiée" 
+                               HorizontalAlignment="Center" 
+                               VerticalAlignment="Center"
+                               Opacity="0.5"
+                               IsVisible="{Binding IsEmpty}"/>
+                </Grid>
+            </Border>
+
+            <!-- Task Details Panel -->
+            <Border Grid.Column="1" 
+                    Width="300"
+                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                    CornerRadius="8">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="20" Spacing="15">
+                        <TextBlock Text="Détails de la Tâche" 
+                                   FontSize="18" FontWeight="Bold"/>
+                        
+                        <TextBlock Text="Sélectionnez une tâche pour voir ses détails" 
+                                   Opacity="0.7"
+                                   IsVisible="{Binding IsNoTaskSelected}"/>
+                        
+                        <!-- Task Details -->
+                        <StackPanel IsVisible="{Binding IsTaskSelected}">
+                            <TextBlock Text="{Binding SelectedTask.Name}" 
+                                       FontSize="16" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding SelectedTask.Description}" 
+                                       Opacity="0.7" 
+                                       Margin="0,5,0,0"/>
+                            
+                            <Separator Margin="0,15"/>
+                            
+                            <StackPanel Spacing="10">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="Type:" Width="80" Opacity="0.7"/>
+                                    <TextBlock Text="{Binding SelectedTask.Type}"/>
+                                </StackPanel>
+                                
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="Fréquence:" Width="80" Opacity="0.7"/>
+                                    <TextBlock Text="{Binding SelectedTask.Frequency}"/>
+                                </StackPanel>
+                                
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="Heure:" Width="80" Opacity="0.7"/>
+                                    <TextBlock Text="{Binding SelectedTask.ExecutionTime, StringFormat='{}{0:hh\\:mm}'}"/>
+                                </StackPanel>
+                                
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="Statut:" Width="80" Opacity="0.7"/>
+                                    <TextBlock Text="{Binding SelectedTask.IsEnabled, Converter={x:Static BoolConverters.Not}, ConverterParameter=Désactivée, FallbackValue=Active}"/>
+                                </StackPanel>
+                            </StackPanel>
+                            
+                            <Separator Margin="0,15"/>
+                            
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Actions" FontWeight="Bold"/>
+                                <Button Content="Exécuter maintenant" 
+                                        Command="{Binding ExecuteTaskCommand}"
+                                        HorizontalAlignment="Stretch"/>
+                                <Button Content="{Binding SelectedTask.IsEnabled, Converter={x:Static BoolConverters.Not}, ConverterParameter=Désactiver, FallbackValue=Activer}" 
+                                        Command="{Binding ToggleTaskCommand}"
+                                        HorizontalAlignment="Stretch"/>
+                                <Button Content="Modifier" 
+                                        Command="{Binding EditTaskCommand}"
+                                        HorizontalAlignment="Stretch"/>
+                                <Button Content="Supprimer" 
+                                        Command="{Binding DeleteTaskCommand}"
+                                        HorizontalAlignment="Stretch"
+                                        Background="#FF4444"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="2" 
+                Background="{DynamicResource SystemControlBackgroundBaseMediumBrush}"
+                CornerRadius="6" 
+                Margin="0,10,0,0" 
+                Padding="15,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <TextBlock Grid.Column="0" 
+                           Text="{Binding StatusMessage}" 
+                           VerticalAlignment="Center"/>
+                
+                <ProgressBar Grid.Column="1" 
+                             IsIndeterminate="True" 
+                             Width="100" Height="4"
+                             IsVisible="{Binding IsLoading}"/>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

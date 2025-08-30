@@ -1,0 +1,129 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  
+  <!-- Modern Button Styles -->
+  <Style Selector="Button.modern-button">
+    <Setter Property="Background" Value="#2C2C54"/>
+    <Setter Property="Foreground" Value="White"/>
+    <Setter Property="BorderBrush" Value="#3D3D6B"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="Padding" Value="16,8"/>
+    <Setter Property="FontWeight" Value="Medium"/>
+    <Setter Property="FontSize" Value="13"/>
+    <Setter Property="Cursor" Value="Hand"/>
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.2"/>
+        <BrushTransition Property="BorderBrush" Duration="0:0:0.2"/>
+        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1"/>
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.modern-button:pointerover">
+    <Setter Property="Background" Value="#3D3D6B"/>
+    <Setter Property="BorderBrush" Value="#4D4D7B"/>
+    <Setter Property="RenderTransform" Value="scale(1.02)"/>
+  </Style>
+
+  <Style Selector="Button.modern-button:pressed">
+    <Setter Property="Background" Value="#1A1A2E"/>
+    <Setter Property="RenderTransform" Value="scale(0.98)"/>
+  </Style>
+
+  <Style Selector="Button.modern-button.primary">
+    <Setter Property="Background" Value="#00D4FF"/>
+    <Setter Property="Foreground" Value="#0F0F23"/>
+    <Setter Property="BorderBrush" Value="#00D4FF"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+  </Style>
+
+  <Style Selector="Button.modern-button.primary:pointerover">
+    <Setter Property="Background" Value="#00C4EF"/>
+    <Setter Property="BorderBrush" Value="#00C4EF"/>
+  </Style>
+
+  <Style Selector="Button.modern-button.refresh">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderBrush" Value="#4ECDC4"/>
+  </Style>
+
+  <Style Selector="Button.modern-button.refresh:pointerover">
+    <Setter Property="Background" Value="#4ECDC4"/>
+    <Setter Property="Foreground" Value="#0F0F23"/>
+  </Style>
+
+  <!-- Tab Button Styles -->
+  <Style Selector="Button.tab-button">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Foreground" Value="#8B8B8B"/>
+    <Setter Property="BorderBrush" Value="Transparent"/>
+    <Setter Property="BorderThickness" Value="0,0,0,2"/>
+    <Setter Property="CornerRadius" Value="0"/>
+    <Setter Property="Padding" Value="16,12"/>
+    <Setter Property="FontWeight" Value="Medium"/>
+    <Setter Property="FontSize" Value="13"/>
+    <Setter Property="Cursor" Value="Hand"/>
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Foreground" Duration="0:0:0.2"/>
+        <BrushTransition Property="BorderBrush" Duration="0:0:0.2"/>
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.tab-button:pointerover">
+    <Setter Property="Foreground" Value="White"/>
+    <Setter Property="BorderBrush" Value="#4ECDC4"/>
+  </Style>
+
+  <Style Selector="Button.tab-button.active">
+    <Setter Property="Foreground" Value="White"/>
+    <Setter Property="BorderBrush" Value="#00D4FF"/>
+  </Style>
+
+  <!-- Link Button Styles -->
+  <Style Selector="Button.link-button">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Foreground" Value="#00D4FF"/>
+    <Setter Property="BorderBrush" Value="Transparent"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="CornerRadius" Value="4"/>
+    <Setter Property="Padding" Value="8,4"/>
+    <Setter Property="FontSize" Value="11"/>
+    <Setter Property="Cursor" Value="Hand"/>
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Foreground" Duration="0:0:0.2"/>
+        <BrushTransition Property="Background" Duration="0:0:0.2"/>
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.link-button:pointerover">
+    <Setter Property="Foreground" Value="White"/>
+    <Setter Property="Background" Value="#1A1A2E"/>
+  </Style>
+
+  <!-- Progress Bar Styles -->
+  <Style Selector="ProgressBar">
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="Foreground" Value="#00D4FF"/>
+    <Setter Property="Background" Value="#0F3460"/>
+  </Style>
+
+  <!-- Card Styles -->
+  <Style Selector="Border.card">
+    <Setter Property="Background" Value="#16213E"/>
+    <Setter Property="BorderBrush" Value="#2C2C54"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="Padding" Value="16"/>
+  </Style>
+
+  <Style Selector="Border.card:pointerover">
+    <Setter Property="BorderBrush" Value="#3D3D6B"/>
+  </Style>
+
+</Styles>

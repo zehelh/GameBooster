@@ -1,0 +1,15 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="GameBooster.UI.App"
+             RequestedThemeVariant="Dark">
+             
+  <Application.DataTemplates>
+    <!-- DataTemplates for ViewModels -->
+  </Application.DataTemplates>
+
+  <Application.Styles>
+    <FluentTheme />
+    <StyleInclude Source="/Styles/ModernStyles.axaml"/>
+  </Application.Styles>
+  
+</Application>
