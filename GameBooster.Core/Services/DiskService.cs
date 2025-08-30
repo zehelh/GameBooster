@@ -92,13 +92,13 @@ public class DiskService : IDiskService
             }
 
             result.Success = true;
-            _logger.LogInformation("Nettoyage des fichiers temporaires terminé");
+            _logger.LogInformation("Temporary files cleanup completed");
         }
         catch (Exception ex)
         {
             result.Success = false;
             result.ErrorMessage = ex.Message;
-            _logger.LogError(ex, "Erreur lors du nettoyage des fichiers temporaires");
+            _logger.LogError(ex, "Error cleaning temporary files");
         }
         finally
         {
@@ -139,13 +139,13 @@ public class DiskService : IDiskService
             }
 
             result.Success = true;
-            _logger.LogInformation("Nettoyage du cache navigateur terminé");
+            _logger.LogInformation("Browser cache cleanup completed");
         }
         catch (Exception ex)
         {
             result.Success = false;
             result.ErrorMessage = ex.Message;
-            _logger.LogError(ex, "Erreur lors du nettoyage du cache navigateur");
+            _logger.LogError(ex, "Error cleaning browser cache");
         }
         finally
         {
@@ -170,16 +170,16 @@ public class DiskService : IDiskService
             // Utilise l'API Windows pour vider la corbeille
             // Note: Cette fonctionnalité nécessite une référence COM qui n'est pas disponible
             // Pour l'instant, on utilise une approche simplifiée
-            _logger.LogInformation("Vidage de la corbeille - fonctionnalité à implémenter");
+            _logger.LogInformation("Emptying recycle bin - feature to implement");
             
             result.Success = true;
-            _logger.LogInformation("Corbeille vidée avec succès");
+            _logger.LogInformation("Recycle bin emptied successfully");
         }
         catch (Exception ex)
         {
             result.Success = false;
             result.ErrorMessage = ex.Message;
-            _logger.LogError(ex, "Erreur lors du vidage de la corbeille");
+            _logger.LogError(ex, "Error emptying recycle bin");
         }
         finally
         {
@@ -212,13 +212,13 @@ public class DiskService : IDiskService
             }
 
             result.Success = true;
-            _logger.LogInformation("Nettoyage des miniatures terminé");
+            _logger.LogInformation("Thumbnails cleanup completed");
         }
         catch (Exception ex)
         {
             result.Success = false;
             result.ErrorMessage = ex.Message;
-            _logger.LogError(ex, "Erreur lors du nettoyage des miniatures");
+            _logger.LogError(ex, "Error cleaning thumbnails");
         }
         finally
         {
@@ -251,13 +251,13 @@ public class DiskService : IDiskService
             }
 
             result.Success = true;
-            _logger.LogInformation("Nettoyage des fichiers de mise à jour Windows terminé");
+            _logger.LogInformation("Windows update files cleanup completed");
         }
         catch (Exception ex)
         {
             result.Success = false;
             result.ErrorMessage = ex.Message;
-            _logger.LogError(ex, "Erreur lors du nettoyage des fichiers de mise à jour Windows");
+            _logger.LogError(ex, "Error cleaning Windows update files");
         }
         finally
         {
@@ -336,13 +336,13 @@ public class DiskService : IDiskService
             }
 
             result.Success = true;
-            _logger.LogInformation("Nettoyage complet terminé");
+            _logger.LogInformation("Complete cleanup finished");
         }
         catch (Exception ex)
         {
             result.Success = false;
             result.ErrorMessage = ex.Message;
-            _logger.LogError(ex, "Erreur lors du nettoyage complet");
+            _logger.LogError(ex, "Error during complete cleanup");
         }
         finally
         {

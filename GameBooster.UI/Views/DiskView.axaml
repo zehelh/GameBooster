@@ -15,11 +15,11 @@
 
         <!-- Header -->
         <StackPanel Grid.Row="0" Margin="0,0,0,20">
-            <TextBlock Text="💾 Gestion des Disques" 
+            <TextBlock Text="💾 Disk Management" 
                        FontSize="24" FontWeight="Bold" 
                        Foreground="White"
                        Margin="0,0,0,10"/>
-            <TextBlock Text="Nettoyez et optimisez l'espace disque" 
+            <TextBlock Text="Clean and optimize disk space" 
                        FontSize="14" Opacity="0.7" 
                        Foreground="#CCCCCC"/>
         </StackPanel>
@@ -43,7 +43,7 @@
                     <StackPanel Spacing="15">
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <TextBlock Text="📊" FontSize="24"/>
-                            <TextBlock Text="État des Disques" 
+                            <TextBlock Text="Disk Status" 
                                        FontSize="18" FontWeight="Bold" 
                                        Foreground="White"/>
                         </StackPanel>
@@ -72,7 +72,7 @@
                                                     <TextBlock Text="{Binding TotalSize, StringFormat='{}{0:F1} GB'}" 
                                                                FontSize="14" FontWeight="Bold" 
                                                                Foreground="White"/>
-                                                    <TextBlock Text="Taille totale" 
+                                                    <TextBlock Text="Total size" 
                                                                FontSize="10" Opacity="0.7"/>
                                                 </StackPanel>
                                                 
@@ -82,7 +82,7 @@
                                                       Margin="0,10,0,0">
                                                     <StackPanel Grid.Column="0" Spacing="5">
                                                         <Grid ColumnDefinitions="*,Auto">
-                                                            <TextBlock Grid.Column="0" Text="Espace utilisé" 
+                                                            <TextBlock Grid.Column="0" Text="Used space" 
                                                                        FontSize="12" Opacity="0.7"/>
                                                             <TextBlock Grid.Column="1" 
                                                                        Text="{Binding UsedSpace, StringFormat='{}{0:F1} GB'}" 
@@ -102,7 +102,7 @@
                                                         <TextBlock Text="{Binding FreeSpace, StringFormat='{}{0:F1} GB'}" 
                                                                    FontSize="14" FontWeight="Bold" 
                                                                    Foreground="LightGreen"/>
-                                                        <TextBlock Text="Libre" 
+                                                        <TextBlock Text="Free" 
                                                                    FontSize="10" Opacity="0.7"/>
                                                     </StackPanel>
                                                 </Grid>
@@ -128,16 +128,16 @@
                         <StackPanel Spacing="15">
                             <StackPanel Orientation="Horizontal" Spacing="10">
                                 <TextBlock Text="🗂️" FontSize="24"/>
-                                <TextBlock Text="Fichiers Temporaires" 
+                                <TextBlock Text="Temporary Files" 
                                            FontSize="16" FontWeight="Bold" 
                                            Foreground="White"/>
                             </StackPanel>
                             
-                            <TextBlock Text="Nettoie les fichiers temporaires système et utilisateur" 
+                            <TextBlock Text="Cleans system and user temporary files" 
                                        FontSize="12" Opacity="0.7" 
                                        TextWrapping="Wrap"/>
                             
-                            <Button Content="Nettoyer" 
+                            <Button Content="Clean" 
                                     Command="{Binding CleanTempFilesCommand}"
                                     Background="#00D4FF"
                                     Foreground="Black"
@@ -159,16 +159,16 @@
                         <StackPanel Spacing="15">
                             <StackPanel Orientation="Horizontal" Spacing="10">
                                 <TextBlock Text="🌐" FontSize="24"/>
-                                <TextBlock Text="Cache Navigateur" 
+                                <TextBlock Text="Browser Cache" 
                                            FontSize="16" FontWeight="Bold" 
                                            Foreground="White"/>
                             </StackPanel>
                             
-                            <TextBlock Text="Nettoie le cache des navigateurs (Chrome, Firefox, Edge)" 
+                            <TextBlock Text="Cleans browser cache (Chrome, Firefox, Edge)" 
                                        FontSize="12" Opacity="0.7" 
                                        TextWrapping="Wrap"/>
                             
-                            <Button Content="Nettoyer" 
+                            <Button Content="Clean" 
                                     Command="{Binding CleanBrowserCacheCommand}"
                                     Background="#FFA500"
                                     Foreground="Black"
@@ -190,16 +190,16 @@
                         <StackPanel Spacing="15">
                             <StackPanel Orientation="Horizontal" Spacing="10">
                                 <TextBlock Text="🗑️" FontSize="24"/>
-                                <TextBlock Text="Corbeille" 
+                                <TextBlock Text="Recycle Bin" 
                                            FontSize="16" FontWeight="Bold" 
                                            Foreground="White"/>
                             </StackPanel>
                             
-                            <TextBlock Text="Vide complètement la corbeille Windows" 
+                            <TextBlock Text="Completely empties Windows recycle bin" 
                                        FontSize="12" Opacity="0.7" 
                                        TextWrapping="Wrap"/>
                             
-                            <Button Content="Vider" 
+                            <Button Content="Empty" 
                                     Command="{Binding EmptyRecycleBinCommand}"
                                     Background="#FF4444"
                                     Foreground="White"
@@ -221,16 +221,16 @@
                         <StackPanel Spacing="15">
                             <StackPanel Orientation="Horizontal" Spacing="10">
                                 <TextBlock Text="🖼️" FontSize="24"/>
-                                <TextBlock Text="Miniatures" 
+                                <TextBlock Text="Thumbnails" 
                                            FontSize="16" FontWeight="Bold" 
                                            Foreground="White"/>
                             </StackPanel>
                             
-                            <TextBlock Text="Nettoie le cache des miniatures Windows" 
+                            <TextBlock Text="Cleans Windows thumbnail cache" 
                                        FontSize="12" Opacity="0.7" 
                                        TextWrapping="Wrap"/>
                             
-                            <Button Content="Nettoyer" 
+                            <Button Content="Clean" 
                                     Command="{Binding CleanThumbnailsCommand}"
                                     Background="#9C27B0"
                                     Foreground="White"
@@ -251,16 +251,16 @@
                     <StackPanel Spacing="15">
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <TextBlock Text="⚡" FontSize="24"/>
-                            <TextBlock Text="Nettoyage Complet" 
+                            <TextBlock Text="Complete Cleanup" 
                                        FontSize="18" FontWeight="Bold" 
                                        Foreground="White"/>
                         </StackPanel>
                         
-                        <TextBlock Text="Effectue un nettoyage complet de tous les éléments ci-dessus" 
+                        <TextBlock Text="Performs a complete cleanup of all items above" 
                                    FontSize="12" Opacity="0.7" 
                                    TextWrapping="Wrap"/>
                         
-                        <Button Content="Nettoyage Complet" 
+                        <Button Content="Complete Cleanup" 
                                 Command="{Binding FullCleanupCommand}"
                                 Background="#4CAF50"
                                 Foreground="White"
@@ -286,13 +286,13 @@
                         BorderThickness="1"
                         IsVisible="{Binding LastCleanupResult, Converter={x:Static ObjectConverters.IsNotNull}}">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="📋 Dernier Résultat" 
+                        <TextBlock Text="📋 Last Result" 
                                    FontSize="16" FontWeight="Bold" 
                                    Foreground="White"/>
-                        <TextBlock Text="{Binding LastCleanupResult.SpaceFreed, StringFormat='Espace libéré: {0:F1} MB'}" 
+                        <TextBlock Text="{Binding LastCleanupResult.SpaceFreed, StringFormat='Space freed: {0:F1} MB'}" 
                                    FontSize="14" 
                                    Foreground="LightGreen"/>
-                        <TextBlock Text="{Binding LastCleanupResult.Timestamp, StringFormat='Effectué le: {0:dd/MM/yyyy HH:mm}'}" 
+                        <TextBlock Text="{Binding LastCleanupResult.Timestamp, StringFormat='Performed on: {0:dd/MM/yyyy HH:mm}'}" 
                                    FontSize="12" Opacity="0.7"/>
                     </StackPanel>
                 </Border>
@@ -309,18 +309,18 @@
                 <StackPanel Spacing="15">
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <TextBlock Text="⚙️" FontSize="20"/>
-                        <TextBlock Text="Actions Rapides" 
+                        <TextBlock Text="Quick Actions" 
                                    FontSize="16" FontWeight="Bold" 
                                    Foreground="White"/>
                     </StackPanel>
                     
-                    <TextBlock Text="Actions rapides pour optimiser l'espace disque" 
+                    <TextBlock Text="Quick actions to optimize disk space" 
                                FontSize="12" Opacity="0.7"/>
                     
                     <Separator Margin="0,10"/>
                     
                     <StackPanel Spacing="10">
-                        <Button Content="🔄 Actualiser" 
+                        <Button Content="🔄 Refresh" 
                                 Command="{Binding RefreshDisksInfoCommand}"
                                 Background="#333" 
                                 Foreground="White"
@@ -329,7 +329,7 @@
                                 CornerRadius="6"
                                 HorizontalAlignment="Stretch"/>
                         
-                        <Button Content="📊 Analyse Complète" 
+                        <Button Content="📊 Full Analysis" 
                                 Background="#333" 
                                 Foreground="White"
                                 FontSize="12"
@@ -337,7 +337,7 @@
                                 CornerRadius="6"
                                 HorizontalAlignment="Stretch"/>
                         
-                        <Button Content="📋 Historique" 
+                        <Button Content="📋 History" 
                                 Background="#333" 
                                 Foreground="White"
                                 FontSize="12"
@@ -349,16 +349,16 @@
                     <Separator Margin="0,10"/>
                     
                     <StackPanel Spacing="8">
-                        <TextBlock Text="💡 Conseils" 
+                        <TextBlock Text="💡 Tips" 
                                    FontSize="14" FontWeight="Bold" 
                                    Foreground="White"/>
-                        <TextBlock Text="• Nettoyez régulièrement les fichiers temporaires" 
+                        <TextBlock Text="• Clean temporary files regularly" 
                                    FontSize="11" Opacity="0.7" 
                                    TextWrapping="Wrap"/>
-                        <TextBlock Text="• Videz la corbeille après suppression" 
+                        <TextBlock Text="• Empty recycle bin after deletion" 
                                    FontSize="11" Opacity="0.7" 
                                    TextWrapping="Wrap"/>
-                        <TextBlock Text="• Surveillez l'espace disque disponible" 
+                        <TextBlock Text="• Monitor available disk space" 
                                    FontSize="11" Opacity="0.7" 
                                    TextWrapping="Wrap"/>
                     </StackPanel>
@@ -381,7 +381,7 @@
                 </Grid.ColumnDefinitions>
                 
                 <TextBlock Grid.Column="0" 
-                           Text="💾 Prêt pour l'optimisation" 
+                           Text="💾 Ready for optimization" 
                            FontSize="12" 
                            Foreground="White"
                            VerticalAlignment="Center"/>

@@ -9,8 +9,14 @@ public partial class StatCard : UserControl
     public static readonly StyledProperty<string> IconProperty =
         AvaloniaProperty.Register<StatCard, string>(nameof(Icon), "📊");
 
+    public static readonly StyledProperty<string> IconNameProperty =
+        AvaloniaProperty.Register<StatCard, string>(nameof(IconName), "chart-bar");
+
+    public static readonly StyledProperty<string> IconColorProperty =
+        AvaloniaProperty.Register<StatCard, string>(nameof(IconColor), "#FFFFFF");
+
     public static readonly StyledProperty<string> LabelProperty =
-        AvaloniaProperty.Register<StatCard, string>(nameof(Label), "Statistique");
+        AvaloniaProperty.Register<StatCard, string>(nameof(Label), "Statistic");
 
     public static readonly StyledProperty<string> ValueProperty =
         AvaloniaProperty.Register<StatCard, string>(nameof(Value), "0");
@@ -34,6 +40,18 @@ public partial class StatCard : UserControl
     {
         get => GetValue(IconProperty);
         set => SetValue(IconProperty, value);
+    }
+
+    public string IconName
+    {
+        get => GetValue(IconNameProperty);
+        set => SetValue(IconNameProperty, value);
+    }
+
+    public string IconColor
+    {
+        get => GetValue(IconColorProperty);
+        set => SetValue(IconColorProperty, value);
     }
 
     public string Label

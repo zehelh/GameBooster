@@ -13,9 +13,9 @@ public interface IMemoryService
     Task<MemoryInfo> GetMemoryInfoAsync();
 
     /// <summary>
-    /// Nettoie la mémoire système
+    /// Nettoie la mémoire système avec options avancées
     /// </summary>
-    Task<CleanupResult> CleanMemoryAsync();
+    Task<CleanupResult> CleanMemoryAsync(MemoryCleanupOptions? options = null);
 
     /// <summary>
     /// Obtient la liste des processus utilisant le plus de mémoire

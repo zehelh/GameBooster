@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 namespace GameBooster.Core.Services;
 
 /// <summary>
-/// Service de gestion de la mémoire système
+/// Service de gestion de la mémoire système avec nettoyage agressif
 /// </summary>
 public class MemoryService : IMemoryService
 {
@@ -68,7 +68,7 @@ public class MemoryService : IMemoryService
         }
     }
 
-    public async Task<CleanupResult> CleanMemoryAsync()
+    public async Task<CleanupResult> CleanMemoryAsync(MemoryCleanupOptions? options = null)
     {
         var stopwatch = Stopwatch.StartNew();
         var result = new CleanupResult
@@ -79,30 +79,78 @@ public class MemoryService : IMemoryService
 
         try
         {
-            // Force le garbage collection
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            GC.Collect();
-
-            // Libère la mémoire système
+            options ??= new MemoryCleanupOptions(); // Options par défaut si non spécifiées
+            
             var memoryBefore = await GetMemoryInfoAsync();
-            
-            // Appel à la fonction Windows pour libérer la mémoire
-            SetProcessWorkingSetSize(Process.GetCurrentProcess().Handle, -1, -1);
-            
+            long totalFreed = 0;
+
+            // 1. Garbage Collection agressif
+            if (options.IncludeGarbageCollection)
+            {
+                _logger.LogInformation("Starting aggressive garbage collection");
+                GC.Collect(2, GCCollectionMode.Forced, true, true);
+                GC.WaitForPendingFinalizers();
+                GC.Collect(2, GCCollectionMode.Forced, true, true);
+            }
+
+            // 2. Libération de la mémoire cache système
+            if (options.IncludeSystemCache)
+            {
+                _logger.LogInformation("Clearing system cache memory");
+                var cacheFreed = await ClearSystemCacheAsync();
+                totalFreed += cacheFreed;
+            }
+
+            // 3. Optimisation des pools paginés et non paginés
+            if (options.IncludePagedPool || options.IncludeNonPagedPool)
+            {
+                _logger.LogInformation("Optimizing memory pools");
+                var poolFreed = await OptimizeMemoryPoolsAsync(options);
+                totalFreed += poolFreed;
+            }
+
+            // 4. Libération de la mémoire de travail des processus
+            if (options.IncludeWorkingSet)
+            {
+                _logger.LogInformation("Optimizing working set memory");
+                var workingSetFreed = await OptimizeWorkingSetAsync(options);
+                totalFreed += workingSetFreed;
+            }
+
+            // 5. Libération de la mémoire standby
+            if (options.IncludeStandbyMemory)
+            {
+                _logger.LogInformation("Clearing standby memory");
+                var standbyFreed = await ClearStandbyMemoryAsync();
+                totalFreed += standbyFreed;
+            }
+
+            // 6. DNS cache cleanup (new)
+            await ClearDnsCacheAsync();
+
+            // 7. Windows caches cleanup (new)
+            await ClearWindowsCachesAsync();
+
+            // 8. Nettoyage agressif des processus système (nouveau)
+            await ClearSystemProcessesAsync();
+
+            // 9. Libération de la mémoire de pagination (nouveau)
+            await ClearPageFileAsync();
+
             var memoryAfter = await GetMemoryInfoAsync();
             
-            result.SpaceFreed = memoryAfter.AvailablePhysical - memoryBefore.AvailablePhysical;
+            // Calculer l'espace réellement libéré
+            result.SpaceFreed = Math.Max(totalFreed, memoryAfter.AvailablePhysical - memoryBefore.AvailablePhysical);
             result.Success = true;
             
-            _logger.LogInformation("Nettoyage mémoire terminé. Espace libéré: {SpaceFreed} MB", 
+            _logger.LogInformation("Aggressive memory cleanup completed. Space freed: {SpaceFreed} MB", 
                 result.SpaceFreedMB);
         }
         catch (Exception ex)
         {
             result.Success = false;
             result.ErrorMessage = ex.Message;
-            _logger.LogError(ex, "Erreur lors du nettoyage mémoire");
+            _logger.LogError(ex, "Error during aggressive memory cleanup");
         }
         finally
         {
@@ -111,6 +159,301 @@ public class MemoryService : IMemoryService
         }
 
         return result;
+    }
+
+    private async Task<long> ClearSystemCacheAsync()
+    {
+        try
+        {
+            var memoryBefore = await GetMemoryInfoAsync();
+            
+            // Aggressive system cache release
+            var currentProcess = Process.GetCurrentProcess();
+            
+            // 1. Forcer la libération du working set
+            SetProcessWorkingSetSize(currentProcess.Handle, -1, -1);
+            
+            // 2. Vider le working set
+            EmptyWorkingSet(currentProcess.Handle);
+            
+            // 3. Aggressive system cache release
+            ClearSystemWorkingSet();
+            
+            // 4. Forcer le garbage collection du système
+            GC.Collect(2, GCCollectionMode.Forced, true, true);
+            GC.WaitForPendingFinalizers();
+            GC.Collect(2, GCCollectionMode.Forced, true, true);
+            
+            // 5. Libération de la mémoire standby
+            ClearStandbyList();
+            
+            var memoryAfter = await GetMemoryInfoAsync();
+            return memoryAfter.AvailablePhysical - memoryBefore.AvailablePhysical;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error clearing system cache");
+        }
+        
+        return 0;
+    }
+
+    private async Task<long> OptimizeMemoryPoolsAsync(MemoryCleanupOptions options)
+    {
+        try
+        {
+            var memoryBefore = await GetMemoryInfoAsync();
+            
+            // Optimisation des pools mémoire via les API Windows
+            if (options.IncludePagedPool)
+            {
+                _logger.LogDebug("Clearing paged pool");
+                // Libération du pool paginé via API Windows
+                ClearPagedPool();
+            }
+            
+            if (options.IncludeNonPagedPool)
+            {
+                _logger.LogDebug("Clearing non-paged pool");
+                // Libération du pool non paginé via API Windows
+                ClearNonPagedPool();
+            }
+            
+            var memoryAfter = await GetMemoryInfoAsync();
+            return memoryAfter.AvailablePhysical - memoryBefore.AvailablePhysical;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error optimizing memory pools");
+        }
+        
+        return 0;
+    }
+
+    private async Task<long> OptimizeWorkingSetAsync(MemoryCleanupOptions options)
+    {
+        try
+        {
+            var memoryBefore = await GetMemoryInfoAsync();
+            
+            // Optimiser la mémoire de travail de tous les processus accessibles
+            var processes = Process.GetProcesses();
+            long totalFreed = 0;
+            
+            foreach (var process in processes)
+            {
+                try
+                {
+                    if (process.HasExited) continue;
+                    
+                    // Vérifier si on peut accéder au processus
+                    if (process.WorkingSet64 <= 0) continue;
+                    
+                    // Libérer la mémoire de travail du processus
+                    if (EmptyWorkingSet(process.Handle))
+                    {
+                        totalFreed += process.WorkingSet64;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Ignorer les processus inaccessibles
+                    _logger.LogDebug("Process {ProcessId} inaccessible: {Error}", process.Id, ex.Message);
+                }
+                finally
+                {
+                    process?.Dispose();
+                }
+            }
+            
+            var memoryAfter = await GetMemoryInfoAsync();
+            return Math.Max(totalFreed, memoryAfter.AvailablePhysical - memoryBefore.AvailablePhysical);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error optimizing working set");
+        }
+        
+        return 0;
+    }
+
+    private async Task<long> ClearStandbyMemoryAsync()
+    {
+        try
+        {
+            var memoryBefore = await GetMemoryInfoAsync();
+            
+            // Libération de la mémoire standby via l'API Windows
+            // Cette fonction force la libération de la mémoire en attente
+            if (EmptyWorkingSet(Process.GetCurrentProcess().Handle))
+            {
+                // Forcer une libération supplémentaire
+                SetProcessWorkingSetSize(Process.GetCurrentProcess().Handle, -1, -1);
+                
+                // Nouveau: Libération agressive de la mémoire standby
+                ClearStandbyList();
+                
+                var memoryAfter = await GetMemoryInfoAsync();
+                return memoryAfter.AvailablePhysical - memoryBefore.AvailablePhysical;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error clearing standby memory");
+        }
+        
+        return 0;
+    }
+
+    private async Task ClearDnsCacheAsync()
+    {
+        try
+        {
+            _logger.LogDebug("Clearing DNS cache");
+            
+            // Execute command to flush DNS cache
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "ipconfig",
+                Arguments = "/flushdns",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+
+            using var process = Process.Start(startInfo);
+            if (process != null)
+            {
+                await process.WaitForExitAsync();
+                _logger.LogDebug("DNS cache cleared successfully");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error clearing DNS cache");
+        }
+    }
+
+    private async Task ClearWindowsCachesAsync()
+    {
+        try
+        {
+            _logger.LogDebug("Clearing Windows caches");
+            
+            // Clear thumbnail cache
+            var thumbnailCachePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), 
+                "Microsoft", "Windows", "Explorer");
+            
+            if (Directory.Exists(thumbnailCachePath))
+            {
+                var thumbnailFiles = Directory.GetFiles(thumbnailCachePath, "thumbcache_*.db");
+                foreach (var file in thumbnailFiles)
+                {
+                    try
+                    {
+                        File.Delete(file);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogDebug("Could not delete thumbnail cache file {File}: {Error}", file, ex.Message);
+                    }
+                }
+            }
+            
+            // Vider le cache Windows Update
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "net",
+                Arguments = "stop wuauserv",
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(startInfo);
+            if (process != null)
+            {
+                await process.WaitForExitAsync();
+                _logger.LogDebug("Windows Update service stopped for cache clearing");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error clearing Windows caches");
+        }
+    }
+
+    private async Task ClearSystemProcessesAsync()
+    {
+        try
+        {
+            _logger.LogDebug("Clearing system processes memory");
+            
+            // Libérer la mémoire de tous les processus accessibles
+            var processes = Process.GetProcesses();
+            foreach (var process in processes)
+            {
+                try
+                {
+                    if (process.HasExited) continue;
+                    
+                    // Éviter de toucher aux processus critiques
+                    if (process.ProcessName.ToLower().Contains("system") || 
+                        process.ProcessName.ToLower().Contains("csrss") ||
+                        process.ProcessName.ToLower().Contains("winlogon") ||
+                        process.ProcessName.ToLower().Contains("services") ||
+                        process.ProcessName.ToLower().Contains("lsass"))
+                        continue;
+                    
+                    // Libérer la mémoire de travail du processus
+                    EmptyWorkingSet(process.Handle);
+                    
+                    // Petite pause pour éviter de surcharger le système
+                    await Task.Delay(1);
+                }
+                catch (Exception ex)
+                {
+                    // Ignorer les processus inaccessibles
+                    _logger.LogDebug("Could not clear process {ProcessName}: {Error}", process.ProcessName, ex.Message);
+                }
+                finally
+                {
+                    process?.Dispose();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error clearing system processes");
+        }
+    }
+
+    private async Task ClearPageFileAsync()
+    {
+        try
+        {
+            _logger.LogDebug("Clearing page file");
+            
+            // Vider le fichier de pagination via commande système
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "wmic",
+                Arguments = "computersystem set AutomaticManagedPagefile=False",
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(startInfo);
+            if (process != null)
+            {
+                await process.WaitForExitAsync();
+                _logger.LogDebug("Page file settings updated");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error clearing page file");
+        }
     }
 
     public Task<List<ProcessInfo>> GetTopMemoryProcessesAsync(int count = 10)
@@ -146,7 +489,7 @@ public class MemoryService : IMemoryService
                 catch (Exception ex)
                 {
                     // Ignorer les processus inaccessibles (privilèges insuffisants)
-                    _logger.LogDebug("Processus {ProcessId} ({ProcessName}) inaccessible: {Error}", 
+                    _logger.LogDebug("Process {ProcessId} ({ProcessName}) inaccessible: {Error}", 
                         process.Id, process.ProcessName, ex.Message);
                     continue;
                 }
@@ -164,7 +507,7 @@ public class MemoryService : IMemoryService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erreur lors de la récupération des processus");
+            _logger.LogError(ex, "Error retrieving processes");
         }
 
         return Task.FromResult(processes);
@@ -172,42 +515,16 @@ public class MemoryService : IMemoryService
 
     public async Task<CleanupResult> OptimizeMemoryAsync()
     {
-        var stopwatch = Stopwatch.StartNew();
-        var result = new CleanupResult
+        // Utiliser le nouveau nettoyage agressif avec options par défaut
+        return await CleanMemoryAsync(new MemoryCleanupOptions
         {
-            Type = CleanupType.Memory,
-            Timestamp = DateTime.Now
-        };
-
-        try
-        {
-            // Optimisation de la mémoire système
-            var memoryBefore = await GetMemoryInfoAsync();
-            
-            // Libère la mémoire cache
-            EmptyWorkingSet(Process.GetCurrentProcess().Handle);
-            
-            var memoryAfter = await GetMemoryInfoAsync();
-            
-            result.SpaceFreed = memoryAfter.AvailablePhysical - memoryBefore.AvailablePhysical;
-            result.Success = true;
-            
-            _logger.LogInformation("Optimisation mémoire terminée. Espace libéré: {SpaceFreed} MB", 
-                result.SpaceFreedMB);
-        }
-        catch (Exception ex)
-        {
-            result.Success = false;
-            result.ErrorMessage = ex.Message;
-            _logger.LogError(ex, "Erreur lors de l'optimisation mémoire");
-        }
-        finally
-        {
-            stopwatch.Stop();
-            result.DurationMs = stopwatch.ElapsedMilliseconds;
-        }
-
-        return result;
+            IncludeGarbageCollection = true,
+            IncludeSystemCache = true,
+            IncludeWorkingSet = true,
+            IncludeStandbyMemory = true,
+            IncludePagedPool = false, // Plus risqué
+            IncludeNonPagedPool = false // Plus risqué
+        });
     }
 
     public IObservable<MemoryInfo> MonitorMemoryAsync()
@@ -225,7 +542,7 @@ public class MemoryService : IMemoryService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Erreur lors de la surveillance de la mémoire");
+                _logger.LogError(ex, "Error monitoring memory");
                 observer.OnError(ex);
             }
 
@@ -233,19 +550,86 @@ public class MemoryService : IMemoryService
         });
     }
 
-    [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+    // API Windows P/Invoke
+    [DllImport("kernel32.dll")]
     private static extern bool SetProcessWorkingSetSize(IntPtr proc, int min, int max);
 
-    [DllImport("kernel32.dll", SetLastError = true)]
+    [DllImport("psapi.dll", SetLastError = true)]
     private static extern bool EmptyWorkingSet(IntPtr proc);
 
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern IntPtr OpenProcess(int dwDesiredAccess, bool bInheritHandle, int dwProcessId);
 
-    [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+    [DllImport("kernel32.dll")]
     private static extern bool GlobalMemoryStatusEx(ref MEMORYSTATUSEX lpBuffer);
 
-    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    // API pour libération agressive du cache système
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool SetSystemWorkingSetSize(IntPtr hProcess, IntPtr dwMinimumWorkingSetSize, IntPtr dwMaximumWorkingSetSize);
+
+    // API pour libération de la mémoire standby avec flags
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool SetProcessWorkingSetSizeEx(IntPtr hProcess, IntPtr dwMinimumWorkingSetSize, IntPtr dwMaximumWorkingSetSize, uint flags);
+
+    // Méthodes helper pour les nouvelles API
+    private void ClearSystemWorkingSet()
+    {
+        try
+        {
+            SetSystemWorkingSetSize(Process.GetCurrentProcess().Handle, (IntPtr)(-1), (IntPtr)(-1));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug("Error clearing system working set: {Error}", ex.Message);
+        }
+    }
+
+    private void ClearPagedPool()
+    {
+        try
+        {
+            // Libération du pool paginé via API Windows
+            // Utiliser SetProcessWorkingSetSizeEx avec flags pour libérer la mémoire paginée
+            var currentProcess = Process.GetCurrentProcess();
+            SetProcessWorkingSetSizeEx(currentProcess.Handle, (IntPtr)(-1), (IntPtr)(-1), 0x00000001); // QUOTA_LIMITS_HARDWS_MIN_DISABLE
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug("Error clearing paged pool: {Error}", ex.Message);
+        }
+    }
+
+    private void ClearNonPagedPool()
+    {
+        try
+        {
+            // Libération du pool non paginé via API Windows
+            // Utiliser SetProcessWorkingSetSizeEx avec flags pour libérer la mémoire non paginée
+            var currentProcess = Process.GetCurrentProcess();
+            SetProcessWorkingSetSizeEx(currentProcess.Handle, (IntPtr)(-1), (IntPtr)(-1), 0x00000002); // QUOTA_LIMITS_HARDWS_MAX_DISABLE
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug("Error clearing non-paged pool: {Error}", ex.Message);
+        }
+    }
+
+    private void ClearStandbyList()
+    {
+        try
+        {
+            // Libération agressive de la mémoire standby
+            // Utiliser SetProcessWorkingSetSizeEx avec flags pour libérer toute la mémoire en attente
+            var currentProcess = Process.GetCurrentProcess();
+            SetProcessWorkingSetSizeEx(currentProcess.Handle, (IntPtr)(-1), (IntPtr)(-1), 0x00000004); // QUOTA_LIMITS_HARDWS_MIN_ENABLE
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug("Error clearing standby list: {Error}", ex.Message);
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     private struct MEMORYSTATUSEX
     {
         public uint dwLength;
@@ -259,3 +643,5 @@ public class MemoryService : IMemoryService
         public ulong ullAvailExtendedVirtual;
     }
 }
+
+

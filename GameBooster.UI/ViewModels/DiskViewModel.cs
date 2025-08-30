@@ -61,27 +61,27 @@ public class DiskViewModel : ViewModelBase
     }
 
     /// <summary>
-    /// Commande pour nettoyer les fichiers temporaires
+            /// Command to clean temporary files
     /// </summary>
     public ICommand CleanTempFilesCommand { get; }
 
     /// <summary>
-    /// Commande pour nettoyer le cache navigateur
+            /// Command to clean browser cache
     /// </summary>
     public ICommand CleanBrowserCacheCommand { get; }
 
     /// <summary>
-    /// Commande pour vider la corbeille
+            /// Command to empty recycle bin
     /// </summary>
     public ICommand EmptyRecycleBinCommand { get; }
 
     /// <summary>
-    /// Commande pour nettoyer les miniatures
+            /// Command to clean thumbnails
     /// </summary>
     public ICommand CleanThumbnailsCommand { get; }
 
     /// <summary>
-    /// Commande pour un nettoyage complet
+            /// Command for complete cleanup
     /// </summary>
     public ICommand FullCleanupCommand { get; }
 
@@ -91,43 +91,43 @@ public class DiskViewModel : ViewModelBase
     public ICommand RefreshDisksInfoCommand { get; }
 
     /// <summary>
-    /// Nettoie les fichiers temporaires
+            /// Cleans temporary files
     /// </summary>
     private async Task CleanTempFilesAsync()
     {
-        await ExecuteCleanupAsync(_diskService.CleanTempFilesAsync, "fichiers temporaires");
+                    await ExecuteCleanupAsync(_diskService.CleanTempFilesAsync, "temporary files");
     }
 
     /// <summary>
-    /// Nettoie le cache navigateur
+            /// Cleans browser cache
     /// </summary>
     private async Task CleanBrowserCacheAsync()
     {
-        await ExecuteCleanupAsync(_diskService.CleanBrowserCacheAsync, "cache navigateur");
+                    await ExecuteCleanupAsync(_diskService.CleanBrowserCacheAsync, "browser cache");
     }
 
     /// <summary>
-    /// Vide la corbeille
+            /// Empties recycle bin
     /// </summary>
     private async Task EmptyRecycleBinAsync()
     {
-        await ExecuteCleanupAsync(_diskService.EmptyRecycleBinAsync, "corbeille");
+                    await ExecuteCleanupAsync(_diskService.EmptyRecycleBinAsync, "recycle bin");
     }
 
     /// <summary>
-    /// Nettoie les miniatures
+            /// Cleans thumbnails
     /// </summary>
     private async Task CleanThumbnailsAsync()
     {
-        await ExecuteCleanupAsync(_diskService.CleanThumbnailsAsync, "miniatures");
+                    await ExecuteCleanupAsync(_diskService.CleanThumbnailsAsync, "thumbnails");
     }
 
     /// <summary>
-    /// Effectue un nettoyage complet
+            /// Performs complete cleanup
     /// </summary>
     private async Task FullCleanupAsync()
     {
-        await ExecuteCleanupAsync(_diskService.PerformFullCleanupAsync, "nettoyage complet");
+                    await ExecuteCleanupAsync(_diskService.PerformFullCleanupAsync, "complete cleanup");
     }
 
     /// <summary>

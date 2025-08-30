@@ -22,7 +22,7 @@ namespace GameBooster.UI.Logging
             // Créer le répertoire de logs s'il n'existe pas
             Directory.CreateDirectory(LogsDirectory);
             
-            // Nettoyer les logs de plus de 7 jours
+            // Clean logs older than 7 days
             CleanOldLogs();
         }
 

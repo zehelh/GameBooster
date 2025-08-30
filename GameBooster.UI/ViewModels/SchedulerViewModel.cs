@@ -253,7 +253,7 @@ public class SchedulerViewModel : ViewModelBase
     {
         if (SelectedTask == null)
         {
-            await Dispatcher.UIThread.InvokeAsync(() => StatusMessage = "Aucune tâche sélectionnée");
+            await Dispatcher.UIThread.InvokeAsync(() => StatusMessage = "No task selected");
             return;
         }
 
@@ -266,21 +266,21 @@ public class SchedulerViewModel : ViewModelBase
                 await Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     SelectedTask.IsEnabled = newEnabledState;
-                    StatusMessage = $"Tâche {(newEnabledState ? "activée" : "désactivée")}: {SelectedTask.Name}";
+                    StatusMessage = $"Task {(newEnabledState ? "enabled" : "disabled")}: {SelectedTask.Name}";
                 });
 
-                _logger.LogInformation("Tâche {State}: {TaskName}", 
-                    newEnabledState ? "activée" : "désactivée", SelectedTask.Name);
+                _logger.LogInformation("Task {State}: {TaskName}", 
+                    newEnabledState ? "enabled" : "disabled", SelectedTask.Name);
             }
             else
             {
-                await Dispatcher.UIThread.InvokeAsync(() => StatusMessage = "Erreur lors du changement d'état de la tâche");
+                await Dispatcher.UIThread.InvokeAsync(() => StatusMessage = "Error changing task status");
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erreur lors du changement d'état de la tâche");
-            await Dispatcher.UIThread.InvokeAsync(() => StatusMessage = $"Erreur: {ex.Message}");
+            _logger.LogError(ex, "Error changing task status");
+            await Dispatcher.UIThread.InvokeAsync(() => StatusMessage = $"Error: {ex.Message}");
         }
     }
 
@@ -296,13 +296,13 @@ public class SchedulerViewModel : ViewModelBase
     {
         return frequency switch
         {
-            TaskFrequency.Daily => "Quotidien",
-            TaskFrequency.Weekly => "Hebdomadaire",
-            TaskFrequency.Monthly => "Mensuel",
-            TaskFrequency.Once => "Une fois",
-            TaskFrequency.OnStartup => "Au démarrage",
-            TaskFrequency.OnShutdown => "À l'arrêt",
-            _ => "Inconnu"
+            TaskFrequency.Daily => "Daily",
+            TaskFrequency.Weekly => "Weekly",
+            TaskFrequency.Monthly => "Monthly",
+            TaskFrequency.Once => "Once",
+            TaskFrequency.OnStartup => "On startup",
+            TaskFrequency.OnShutdown => "On shutdown",
+            _ => "Unknown"
         };
     }
 
@@ -313,15 +313,15 @@ public class SchedulerViewModel : ViewModelBase
     {
         return taskType switch
         {
-            TaskType.MemoryCleanup => "Nettoyage mémoire",
-            TaskType.DiskCleanup => "Nettoyage disque",
-            TaskType.BrowserCacheCleanup => "Cache navigateur",
-            TaskType.TempFilesCleanup => "Fichiers temporaires",
-            TaskType.RecycleBinEmpty => "Corbeille",
-            TaskType.ThumbnailsCleanup => "Miniatures",
-            TaskType.SystemOptimization => "Optimisation système",
-            TaskType.CustomCommand => "Commande personnalisée",
-            _ => "Inconnu"
+                        TaskType.MemoryCleanup => "Memory cleanup",
+            TaskType.DiskCleanup => "Disk cleanup",
+            TaskType.BrowserCacheCleanup => "Browser cache",
+            TaskType.TempFilesCleanup => "Temporary files",
+            TaskType.RecycleBinEmpty => "Recycle bin",
+            TaskType.ThumbnailsCleanup => "Thumbnails",
+            TaskType.SystemOptimization => "System optimization",
+            TaskType.CustomCommand => "Custom command",
+            _ => "Unknown"
         };
     }
 
@@ -331,23 +331,23 @@ public class SchedulerViewModel : ViewModelBase
     public static string GetTaskStatusText(ScheduledTask task)
     {
         if (!task.IsEnabled)
-            return "Désactivée";
+            return "Disabled";
 
         if (task.NextExecution.HasValue)
         {
             var timeUntilNext = task.NextExecution.Value - DateTime.Now;
             if (timeUntilNext.TotalMinutes < 0)
-                return "En retard";
+                return "Overdue";
             else if (timeUntilNext.TotalMinutes < 1)
-                return "Exécution imminente";
+                return "Execution imminent";
             else if (timeUntilNext.TotalHours < 1)
-                return $"Dans {timeUntilNext.TotalMinutes:F0} min";
+                return $"In {timeUntilNext.TotalMinutes:F0} min";
             else if (timeUntilNext.TotalDays < 1)
-                return $"Dans {timeUntilNext.TotalHours:F0} h";
+                return $"In {timeUntilNext.TotalHours:F0} h";
             else
-                return $"Dans {timeUntilNext.TotalDays:F0} jours";
+                return $"In {timeUntilNext.TotalDays:F0} days";
         }
 
-        return "Pas programmée";
+        return "Not scheduled";
     }
 }

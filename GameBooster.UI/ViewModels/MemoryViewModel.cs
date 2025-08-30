@@ -14,7 +14,7 @@ using System.Windows;
 namespace GameBooster.UI.ViewModels;
 
 /// <summary>
-/// ViewModel for memory management features
+/// ViewModel for memory management features with aggressive cleaning options
 /// </summary>
 public class MemoryViewModel : ViewModelBase
 {
@@ -26,6 +26,14 @@ public class MemoryViewModel : ViewModelBase
     private CleanupResult? _lastCleanupResult;
     private List<ProcessInfo> _topProcesses = new();
     private bool _isMonitoring = true;
+    
+    // Options de nettoyage avancées
+    private bool _includeGarbageCollection = true;
+    private bool _includeSystemCache = true;
+    private bool _includeWorkingSet = true;
+    private bool _includeStandbyMemory = true;
+    private bool _includePagedPool = false;
+    private bool _includeNonPagedPool = false;
 
     public MemoryInfo MemoryInfo
     {
@@ -57,10 +65,46 @@ public class MemoryViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _isMonitoring, value);
     }
 
+    // Options de nettoyage avancées
+    public bool IncludeGarbageCollection
+    {
+        get => _includeGarbageCollection;
+        set => this.RaiseAndSetIfChanged(ref _includeGarbageCollection, value);
+    }
+
+    public bool IncludeSystemCache
+    {
+        get => _includeSystemCache;
+        set => this.RaiseAndSetIfChanged(ref _includeSystemCache, value);
+    }
+
+    public bool IncludeWorkingSet
+    {
+        get => _includeWorkingSet;
+        set => this.RaiseAndSetIfChanged(ref _includeWorkingSet, value);
+    }
+
+    public bool IncludeStandbyMemory
+    {
+        get => _includeStandbyMemory;
+        set => this.RaiseAndSetIfChanged(ref _includeStandbyMemory, value);
+    }
+
+    public bool IncludePagedPool
+    {
+        get => _includePagedPool;
+        set => this.RaiseAndSetIfChanged(ref _includePagedPool, value);
+    }
+
+    public bool IncludeNonPagedPool
+    {
+        get => _includeNonPagedPool;
+        set => this.RaiseAndSetIfChanged(ref _includeNonPagedPool, value);
+    }
+
     // Commandes simples sans observables complexes
-    public ICommand CleanMemoryCommand { get; }
-    public ICommand RefreshCommand { get; }
     public ICommand OptimizeMemoryCommand { get; }
+    public ICommand RefreshCommand { get; }
     public ICommand ToggleMonitoringCommand { get; }
 
     public MemoryViewModel(IMemoryService memoryService, ILogger<MemoryViewModel> logger)
@@ -69,43 +113,12 @@ public class MemoryViewModel : ViewModelBase
         _logger = logger;
 
         // Commandes simples pour éviter les problèmes de thread
-        CleanMemoryCommand = new RelayCommand(async () => await CleanMemoryAsync(), () => !IsCleaning);
-        RefreshCommand = new RelayCommand(async () => await RefreshMemoryInfoAsync());
         OptimizeMemoryCommand = new RelayCommand(async () => await OptimizeMemoryAsync(), () => !IsCleaning);
+        RefreshCommand = new RelayCommand(async () => await RefreshMemoryInfoAsync());
         ToggleMonitoringCommand = new RelayCommand(() => ToggleMonitoring());
 
         // Start monitoring
         StartMonitoring();
-    }
-
-    private async Task CleanMemoryAsync()
-    {
-        // Vérification thread-safe de l'état
-        if (IsCleaning) return;
-
-        try
-        {
-            await Dispatcher.UIThread.InvokeAsync(() => IsCleaning = true);
-            _logger.LogInformation("Starting memory cleanup");
-
-            var result = await _memoryService.CleanMemoryAsync();
-            
-            // Mise à jour sur le thread UI
-            await Dispatcher.UIThread.InvokeAsync(() => LastCleanupResult = result);
-
-            _logger.LogInformation("Memory cleanup completed. Freed: {0} MB", result.SpaceFreedMB);
-            
-            // Refresh memory info after cleanup
-            await RefreshMemoryInfoAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error during memory cleanup");
-        }
-        finally
-        {
-            await Dispatcher.UIThread.InvokeAsync(() => IsCleaning = false);
-        }
     }
 
     private async Task OptimizeMemoryAsync()
@@ -116,9 +129,20 @@ public class MemoryViewModel : ViewModelBase
         try
         {
             await Dispatcher.UIThread.InvokeAsync(() => IsCleaning = true);
-            _logger.LogInformation("Starting memory optimization");
+            _logger.LogInformation("Starting aggressive memory optimization");
 
-            var result = await _memoryService.OptimizeMemoryAsync();
+            // Créer les options de nettoyage basées sur les sélections de l'utilisateur
+            var options = new MemoryCleanupOptions
+            {
+                IncludeGarbageCollection = IncludeGarbageCollection,
+                IncludeSystemCache = IncludeSystemCache,
+                IncludeWorkingSet = IncludeWorkingSet,
+                IncludeStandbyMemory = IncludeStandbyMemory,
+                IncludePagedPool = IncludePagedPool,
+                IncludeNonPagedPool = IncludeNonPagedPool
+            };
+
+            var result = await _memoryService.CleanMemoryAsync(options);
             
             // Mise à jour sur le thread UI
             await Dispatcher.UIThread.InvokeAsync(() => LastCleanupResult = result);
@@ -126,11 +150,11 @@ public class MemoryViewModel : ViewModelBase
             // Also load top processes
             await LoadTopProcessesAsync();
             
-            _logger.LogInformation("Memory optimization completed");
+            _logger.LogInformation("Aggressive memory optimization completed. Freed: {0} MB", result.SpaceFreedMB);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during memory optimization");
+            _logger.LogError(ex, "Error during aggressive memory optimization");
         }
         finally
         {
