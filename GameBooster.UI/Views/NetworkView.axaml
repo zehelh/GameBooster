@@ -325,7 +325,7 @@
                     </StackPanel>
                     
                     <TextBlock Grid.Column="1" 
-                               Text="{Binding NetworkStats.TotalProcesses, StringFormat='{0} processes monitored'}" 
+                               Text="{Binding NetworkStats.TotalProcesses}" 
                                FontSize="11" 
                                Foreground="#AAAAAA"/>
                 </Grid>

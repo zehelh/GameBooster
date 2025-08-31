@@ -1,0 +1,67 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="GameBooster.UI.Controls.ActionCard"
+             x:Name="actionCard"
+             xmlns:controls="using:GameBooster.UI.Controls">
+
+  <Border Background="#1A1A2E" 
+          CornerRadius="8" 
+          Padding="20"
+          Margin="10"
+          BorderBrush="#00D4FF" 
+          BorderThickness="1">
+    
+    <StackPanel Spacing="15">
+      <!-- Header with Icon and Title -->
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <TextBlock Text="{Binding #actionCard.Icon}" 
+                   FontSize="24" 
+                   VerticalAlignment="Center"/>
+        <TextBlock Text="{Binding #actionCard.Title}" 
+                   FontSize="18" 
+                   FontWeight="Bold" 
+                   Foreground="White"
+                   VerticalAlignment="Center"/>
+      </StackPanel>
+      
+      <!-- Description -->
+      <TextBlock Text="{Binding #actionCard.Description}" 
+                 FontSize="14" 
+                 Foreground="#CCCCCC" 
+                 TextWrapping="Wrap"/>
+      
+      <!-- Content Area -->
+      <ContentPresenter Content="{Binding #actionCard.Content}"/>
+      
+      <!-- Action Button -->
+      <Button Content="{Binding #actionCard.ActionText}" 
+              Command="{Binding #actionCard.ActionCommand}"
+              Background="#00D4FF" 
+              Foreground="White"
+              FontWeight="Bold"
+              Padding="15,8"
+              CornerRadius="4"
+              HorizontalAlignment="Stretch"/>
+              
+      <!-- Loading/Status Indicator -->
+      <StackPanel IsVisible="{Binding #actionCard.IsLoading}" 
+                  Orientation="Horizontal" 
+                  Spacing="8"
+                  HorizontalAlignment="Center">
+        <TextBlock Text="⏳" FontSize="16"/>
+        <TextBlock Text="{Binding #actionCard.LoadingText}" 
+                   Foreground="#00D4FF" 
+                   FontSize="14"/>
+      </StackPanel>
+      
+      <!-- Last Result -->
+      <Border Background="#0F0F23" 
+              Padding="10" 
+              CornerRadius="4">
+        <TextBlock Text="{Binding #actionCard.LastResult}" 
+                   FontSize="12" 
+                   Foreground="#AAAAAA"/>
+      </Border>
+    </StackPanel>
+  </Border>
+</UserControl>
