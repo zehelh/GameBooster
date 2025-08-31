@@ -24,6 +24,8 @@ public class MainWindowViewModel : ViewModelBase
     private readonly IMemoryService _memoryService;
     private readonly IDiskService _diskService;
     private readonly ISchedulerService _schedulerService;
+    private readonly IWindowsServiceManager _windowsServiceManager;
+    private readonly INetworkService _networkService;
     private readonly ILogger<MainWindowViewModel> _logger;
     
     private MemoryInfo _memoryInfo = new();
@@ -48,14 +50,20 @@ public class MainWindowViewModel : ViewModelBase
     public MemoryViewModel MemoryViewModel { get; }
     public DiskViewModel DiskViewModel { get; }
     public SchedulerViewModel SchedulerViewModel { get; }
+    public ServicesViewModel ServicesViewModel { get; }
+    public NetworkViewModel NetworkViewModel { get; }
 
     public MainWindowViewModel(
         IMemoryService memoryService,
         IDiskService diskService,
         ISchedulerService schedulerService,
+        IWindowsServiceManager windowsServiceManager,
+        INetworkService networkService,
         MemoryViewModel memoryViewModel,
         DiskViewModel diskViewModel,
         SchedulerViewModel schedulerViewModel,
+        ServicesViewModel servicesViewModel,
+        NetworkViewModel networkViewModel,
         ILogger<MainWindowViewModel> logger)
     {
         DebugLogger.ClearLog();
@@ -65,12 +73,16 @@ public class MainWindowViewModel : ViewModelBase
         _memoryService = memoryService;
         _diskService = diskService;
         _schedulerService = schedulerService;
+        _windowsServiceManager = windowsServiceManager;
+        _networkService = networkService;
         _logger = logger;
         
         // Initialisation des ViewModels des onglets
         MemoryViewModel = memoryViewModel;
         DiskViewModel = diskViewModel;
         SchedulerViewModel = schedulerViewModel;
+        ServicesViewModel = servicesViewModel;
+        NetworkViewModel = networkViewModel;
         
         _logger.LogInformation("=== CONSTRUCTEUR MainWindowViewModel ===");
         DebugLogger.LogAction("Services injectés");

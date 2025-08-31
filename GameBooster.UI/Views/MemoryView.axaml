@@ -5,12 +5,13 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
              x:Class="GameBooster.UI.Views.MemoryView">
     
-    <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+         <Grid Margin="20">
+             <Grid.RowDefinitions>
+                 <RowDefinition Height="Auto"/>
+                 <RowDefinition Height="*"/>
+                 <RowDefinition Height="Auto"/>
+             </Grid.RowDefinitions>
 
         <!-- Header -->
         <StackPanel Grid.Row="0" Margin="0,0,0,20">
@@ -23,8 +24,8 @@
                        Foreground="#CCCCCC"/>
         </StackPanel>
 
-        <!-- Main Content -->
-        <Grid Grid.Row="1">
+                 <!-- Main Content -->
+         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*"/>
                 <ColumnDefinition Width="*"/>
@@ -56,9 +57,9 @@
                                 <StackPanel>
                                     <TextBlock Text="Total Memory" 
                                                FontSize="12" Opacity="0.7"/>
-                                    <TextBlock Text="{Binding MemoryInfo.TotalPhysical, StringFormat='{}{0:F1} GB'}" 
-                                               FontSize="18" FontWeight="Bold" 
-                                               Foreground="White"/>
+                                                                         <TextBlock Text="{Binding TotalMemoryFormatted}" 
+                                                FontSize="18" FontWeight="Bold" 
+                                                Foreground="White"/>
                                 </StackPanel>
                             </Border>
                             
@@ -70,9 +71,9 @@
                                 <StackPanel>
                                     <TextBlock Text="Available Memory" 
                                                FontSize="12" Opacity="0.7"/>
-                                    <TextBlock Text="{Binding MemoryInfo.AvailablePhysical, StringFormat='{}{0:F1} GB'}" 
-                                               FontSize="18" FontWeight="Bold" 
-                                               Foreground="LightGreen"/>
+                                                                         <TextBlock Text="{Binding AvailableMemoryFormatted}" 
+                                                FontSize="18" FontWeight="Bold" 
+                                                Foreground="LightGreen"/>
                                 </StackPanel>
                             </Border>
                             
@@ -84,9 +85,9 @@
                                 <StackPanel>
                                     <TextBlock Text="Used Memory" 
                                                FontSize="12" Opacity="0.7"/>
-                                    <TextBlock Text="{Binding MemoryInfo.UsedPhysical, StringFormat='{}{0:F1} GB'}" 
-                                               FontSize="18" FontWeight="Bold" 
-                                               Foreground="#FFA500"/>
+                                                                         <TextBlock Text="{Binding UsedMemoryFormatted}" 
+                                                FontSize="18" FontWeight="Bold" 
+                                                Foreground="#FFA500"/>
                                 </StackPanel>
                             </Border>
                             
@@ -98,9 +99,9 @@
                                 <StackPanel>
                                     <TextBlock Text="Usage" 
                                                FontSize="12" Opacity="0.7"/>
-                                    <TextBlock Text="{Binding MemoryInfo.UsagePercentage, StringFormat='{}{0:P1}'}" 
-                                               FontSize="18" FontWeight="Bold" 
-                                               Foreground="#00D4FF"/>
+                                                                         <TextBlock Text="{Binding UsagePercentageFormatted}" 
+                                                FontSize="18" FontWeight="Bold" 
+                                                Foreground="#00D4FF"/>
                                 </StackPanel>
                             </Border>
                         </Grid>
@@ -110,12 +111,12 @@
                             <Grid ColumnDefinitions="*,Auto">
                                 <TextBlock Grid.Column="0" Text="Memory usage" 
                                            FontSize="12" Opacity="0.7"/>
-                                <TextBlock Grid.Column="1" 
-                                           Text="{Binding MemoryInfo.UsagePercentage, StringFormat='{}{0:P1}'}" 
-                                           FontSize="12" Opacity="0.7"/>
+                                                                 <TextBlock Grid.Column="1" 
+                                            Text="{Binding UsagePercentageFormatted}" 
+                                            FontSize="12" Opacity="0.7"/>
                             </Grid>
-                            <ProgressBar Value="{Binding MemoryInfo.UsagePercentage}" 
-                                         Maximum="1"
+                                                         <ProgressBar Value="{Binding UsagePercentageRatio}" 
+                                          Maximum="1"
                                          Height="8"
                                          Background="#333"
                                          Foreground="#00D4FF"/>
@@ -210,14 +211,153 @@
                         BorderBrush="#333" 
                         BorderThickness="1"
                         IsVisible="{Binding LastCleanupResult, Converter={x:Static ObjectConverters.IsNotNull}}">
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="📋 Last Result" 
+                    <StackPanel Spacing="15">
+                        <TextBlock Text="📋 Last Cleanup Results" 
                                    FontSize="16" FontWeight="Bold" 
                                    Foreground="White"/>
-                        <TextBlock Text="{Binding LastCleanupResult.SpaceFreed, StringFormat='Space freed: {0:F1} MB'}" 
-                                   FontSize="14" 
-                                   Foreground="LightGreen"/>
-                        <TextBlock Text="{Binding LastCleanupResult.Timestamp, StringFormat='Performed on: {0:dd/MM/yyyy HH:mm}'}" 
+                        
+                        <!-- Summary -->
+                        <Border Background="#0F0F23" CornerRadius="6" Padding="15">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="{Binding TotalMemoryFreedFormatted}" 
+                                           FontSize="14" FontWeight="Bold"
+                                           Foreground="LightGreen"/>
+                                <TextBlock Text="{Binding MemoryImprovementFormatted}" 
+                                           FontSize="12"
+                                           Foreground="#00D4FF"/>
+                                <TextBlock Text="{Binding DurationFormatted}" 
+                                           FontSize="12"
+                                           Foreground="#AAAAAA"/>
+                            </StackPanel>
+                        </Border>
+                        
+                        <!-- Detailed Statistics -->
+                        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto">
+                            <!-- Garbage Collection -->
+                            <Border Grid.Column="0" Grid.Row="0" Background="#0F0F23" CornerRadius="4" Padding="8" Margin="2">
+                                <StackPanel>
+                                    <TextBlock Text="Garbage Collection" FontSize="10" Opacity="0.7"/>
+                                    <TextBlock Text="{Binding GarbageCollectionFreedFormatted}" 
+                                               FontSize="12" Foreground="White"/>
+                                </StackPanel>
+                            </Border>
+                            
+                            <!-- System Cache -->
+                            <Border Grid.Column="1" Grid.Row="0" Background="#0F0F23" CornerRadius="4" Padding="8" Margin="2">
+                                <StackPanel>
+                                    <TextBlock Text="System Cache" FontSize="10" Opacity="0.7"/>
+                                    <TextBlock Text="{Binding SystemCacheFreedFormatted}" 
+                                               FontSize="12" Foreground="White"/>
+                                </StackPanel>
+                            </Border>
+                            
+                            <!-- Working Set -->
+                            <Border Grid.Column="0" Grid.Row="1" Background="#0F0F23" CornerRadius="4" Padding="8" Margin="2">
+                                <StackPanel>
+                                    <TextBlock Text="Working Set" FontSize="10" Opacity="0.7"/>
+                                    <TextBlock Text="{Binding WorkingSetFreedFormatted}" 
+                                               FontSize="12" Foreground="White"/>
+                                </StackPanel>
+                            </Border>
+                            
+                            <!-- Standby Memory -->
+                            <Border Grid.Column="1" Grid.Row="1" Background="#0F0F23" CornerRadius="4" Padding="8" Margin="2">
+                                <StackPanel>
+                                    <TextBlock Text="Standby Memory" FontSize="10" Opacity="0.7"/>
+                                    <TextBlock Text="{Binding StandbyMemoryFreedFormatted}" 
+                                               FontSize="12" Foreground="White"/>
+                                </StackPanel>
+                            </Border>
+                            
+                            <!-- Paged Pool -->
+                            <Border Grid.Column="0" Grid.Row="2" Background="#0F0F23" CornerRadius="4" Padding="8" Margin="2">
+                                <StackPanel>
+                                    <TextBlock Text="Paged Pool" FontSize="10" Opacity="0.7"/>
+                                    <TextBlock Text="{Binding PagedPoolFreedFormatted}" 
+                                               FontSize="12" Foreground="White"/>
+                                </StackPanel>
+                            </Border>
+                            
+                            <!-- Non-Paged Pool -->
+                            <Border Grid.Column="1" Grid.Row="2" Background="#0F0F23" CornerRadius="4" Padding="8" Margin="2">
+                                <StackPanel>
+                                    <TextBlock Text="Non-Paged Pool" FontSize="10" Opacity="0.7"/>
+                                    <TextBlock Text="{Binding NonPagedPoolFreedFormatted}" 
+                                               FontSize="12" Foreground="White"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                        
+                        <!-- Memory State -->
+                        <Border Background="#0F0F23" CornerRadius="6" Padding="15">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Memory State" FontSize="12" FontWeight="Bold" Foreground="White"/>
+                                <Grid ColumnDefinitions="*,*">
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Before Cleanup" FontSize="10" Opacity="0.7"/>
+                                        <TextBlock Text="{Binding AvailableMemoryBeforeFormatted}" 
+                                                   FontSize="11" Foreground="#FFA500"/>
+                                        <TextBlock Text="{Binding MemoryUsageBeforeFormatted}" 
+                                                   FontSize="11" Foreground="#FFA500"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="After Cleanup" FontSize="10" Opacity="0.7"/>
+                                        <TextBlock Text="{Binding AvailableMemoryAfterFormatted}" 
+                                                   FontSize="11" Foreground="LightGreen"/>
+                                        <TextBlock Text="{Binding MemoryUsageAfterFormatted}" 
+                                                   FontSize="11" Foreground="LightGreen"/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Process Cleanup Details -->
+                        <Border Background="#0F0F23" CornerRadius="6" Padding="15"
+                                IsVisible="{Binding LastCleanupResult.ProcessCleanupDetails.Count}">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Processes Cleaned" FontSize="12" FontWeight="Bold" Foreground="White"/>
+                                <TextBlock Text="{Binding TotalProcessMemoryFreedFormatted}" 
+                                           FontSize="11" Foreground="LightGreen"/>
+                                
+                                <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding SortedProcesses}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Background="#1A1A2E" 
+                                                        Padding="8" 
+                                                        Margin="0,2" 
+                                                        CornerRadius="4">
+                                                    <Grid ColumnDefinitions="*,Auto,Auto">
+                                                        <StackPanel Grid.Column="0">
+                                                            <TextBlock Text="{Binding Name}" 
+                                                                       FontSize="10" 
+                                                                       FontWeight="Bold"
+                                                                       Foreground="White"/>
+                                                            <TextBlock Text="{Binding ProcessIdFormatted}" 
+                                                                       FontSize="9" 
+                                                                       Foreground="#AAAAAA"/>
+                                                        </StackPanel>
+                                                        <TextBlock Grid.Column="1" 
+                                                                   Text="{Binding MemoryFreedGBFormatted}" 
+                                                                   FontSize="10" 
+                                                                   Foreground="LightGreen"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="8,0"/>
+                                                        <TextBlock Grid.Column="2" 
+                                                                   Text="{Binding WorkingSetBeforeFormatted}" 
+                                                                   FontSize="9" 
+                                                                   Foreground="#666"
+                                                                   VerticalAlignment="Center"/>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </StackPanel>
+                        </Border>
+                        
+                        <TextBlock Text="{Binding LastCleanupResult.Timestamp}" 
                                    FontSize="12" Opacity="0.7"/>
                     </StackPanel>
                 </Border>
@@ -255,16 +395,16 @@
                                                            FontSize="12" 
                                                            FontWeight="Bold"
                                                            Foreground="White"/>
-                                                <TextBlock Text="{Binding MemoryUsage, StringFormat='{}{0:F1} MB'}" 
+                                                <TextBlock Text="{Binding MemoryUsageFormatted}" 
                                                            FontSize="10" 
                                                            Foreground="#AAAAAA"/>
                                             </StackPanel>
                                             <StackPanel Grid.Column="1" 
                                                         HorizontalAlignment="Right">
-                                                <TextBlock Text="{Binding ProcessId, StringFormat='PID: {0}'}" 
+                                                <TextBlock Text="{Binding ProcessIdFormatted}" 
                                                            FontSize="10" 
                                                            Foreground="#666"/>
-                                                <TextBlock Text="{Binding CpuUsage, StringFormat='CPU: {0:F1}%'}" 
+                                                <TextBlock Text="{Binding CpuUsageFormatted}" 
                                                            FontSize="10" 
                                                            Foreground="#666"/>
                                             </StackPanel>
@@ -287,14 +427,14 @@
             </Border>
         </Grid>
 
-        <!-- Status Bar -->
-        <Border Grid.Row="2" 
-                Background="#1A1A2E" 
-                CornerRadius="6" 
-                Margin="0,10,0,0" 
-                Padding="15,10"
-                BorderBrush="#333" 
-                BorderThickness="1">
+                 <!-- Status Bar -->
+         <Border Grid.Row="2" 
+                 Background="#1A1A2E" 
+                 CornerRadius="6" 
+                 Margin="0,10,0,0" 
+                 Padding="15,10"
+                 BorderBrush="#333" 
+                 BorderThickness="1">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -319,7 +459,8 @@
                         FontSize="11"
                         Padding="8,4"
                         CornerRadius="4"/>
-            </Grid>
-        </Border>
-    </Grid>
-</UserControl>
+                         </Grid>
+         </Border>
+     </Grid>
+     </ScrollViewer>
+ </UserControl>

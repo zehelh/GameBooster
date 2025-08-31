@@ -23,11 +23,11 @@ public class MemoryViewModel : ViewModelBase
     
     private MemoryInfo _memoryInfo = new();
     private bool _isCleaning;
-    private CleanupResult? _lastCleanupResult;
+    private MemoryCleanupResult? _lastCleanupResult;
     private List<ProcessInfo> _topProcesses = new();
     private bool _isMonitoring = true;
     
-    // Options de nettoyage avancées
+    // Advanced cleaning options
     private bool _includeGarbageCollection = true;
     private bool _includeSystemCache = true;
     private bool _includeWorkingSet = true;
@@ -38,7 +38,16 @@ public class MemoryViewModel : ViewModelBase
     public MemoryInfo MemoryInfo
     {
         get => _memoryInfo;
-        set => this.RaiseAndSetIfChanged(ref _memoryInfo, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _memoryInfo, value);
+            // Trigger property change notifications for formatted properties
+            this.RaisePropertyChanged(nameof(TotalMemoryFormatted));
+            this.RaisePropertyChanged(nameof(AvailableMemoryFormatted));
+            this.RaisePropertyChanged(nameof(UsedMemoryFormatted));
+            this.RaisePropertyChanged(nameof(UsagePercentageFormatted));
+            this.RaisePropertyChanged(nameof(UsagePercentageRatio));
+        }
     }
 
     public bool IsCleaning
@@ -47,11 +56,61 @@ public class MemoryViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _isCleaning, value);
     }
 
-    public CleanupResult? LastCleanupResult
-    {
-        get => _lastCleanupResult;
-        set => this.RaiseAndSetIfChanged(ref _lastCleanupResult, value);
-    }
+            public MemoryCleanupResult? LastCleanupResult
+        {
+            get => _lastCleanupResult;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _lastCleanupResult, value);
+                // Trigger property change notifications for formatted properties
+                this.RaisePropertyChanged(nameof(TotalMemoryFreedFormatted));
+                this.RaisePropertyChanged(nameof(MemoryImprovementFormatted));
+                this.RaisePropertyChanged(nameof(DurationFormatted));
+                this.RaisePropertyChanged(nameof(GarbageCollectionFreedFormatted));
+                this.RaisePropertyChanged(nameof(SystemCacheFreedFormatted));
+                this.RaisePropertyChanged(nameof(WorkingSetFreedFormatted));
+                this.RaisePropertyChanged(nameof(StandbyMemoryFreedFormatted));
+                this.RaisePropertyChanged(nameof(PagedPoolFreedFormatted));
+                this.RaisePropertyChanged(nameof(NonPagedPoolFreedFormatted));
+                this.RaisePropertyChanged(nameof(AvailableMemoryBeforeFormatted));
+                this.RaisePropertyChanged(nameof(AvailableMemoryAfterFormatted));
+                this.RaisePropertyChanged(nameof(MemoryUsageBeforeFormatted));
+                this.RaisePropertyChanged(nameof(MemoryUsageAfterFormatted));
+                this.RaisePropertyChanged(nameof(TotalProcessMemoryFreedFormatted));
+                this.RaisePropertyChanged(nameof(SortedProcesses));
+            }
+        }
+
+    // Formatted properties for display
+    public string TotalMemoryFreedFormatted => LastCleanupResult?.TotalMemoryFreedGB.ToString("F1") + " GB" ?? "0.0 GB";
+    public string MemoryImprovementFormatted => LastCleanupResult?.MemoryImprovementPercentage.ToString("F1") + "%" ?? "0.0%";
+    public string DurationFormatted => LastCleanupResult?.DurationMs.ToString() + " ms" ?? "0 ms";
+    
+    public string GarbageCollectionFreedFormatted => LastCleanupResult?.GarbageCollectionFreedGB.ToString("F1") + " GB" ?? "0.0 GB";
+    public string SystemCacheFreedFormatted => LastCleanupResult?.SystemCacheFreedGB.ToString("F1") + " GB" ?? "0.0 GB";
+    public string WorkingSetFreedFormatted => LastCleanupResult?.WorkingSetFreedGB.ToString("F1") + " GB" ?? "0.0 GB";
+    public string StandbyMemoryFreedFormatted => LastCleanupResult?.StandbyMemoryFreedGB.ToString("F1") + " GB" ?? "0.0 GB";
+    public string PagedPoolFreedFormatted => LastCleanupResult?.PagedPoolFreedGB.ToString("F1") + " GB" ?? "0.0 GB";
+    public string NonPagedPoolFreedFormatted => LastCleanupResult?.NonPagedPoolFreedGB.ToString("F1") + " GB" ?? "0.0 GB";
+    
+    public string AvailableMemoryBeforeFormatted => LastCleanupResult?.AvailableMemoryBeforeGB.ToString("F1") + " GB" ?? "0.0 GB";
+    public string AvailableMemoryAfterFormatted => LastCleanupResult?.AvailableMemoryAfterGB.ToString("F1") + " GB" ?? "0.0 GB";
+    public string MemoryUsageBeforeFormatted => LastCleanupResult?.MemoryUsageBeforePercentage.ToString("F1") + "%" ?? "0.0%";
+    public string MemoryUsageAfterFormatted => LastCleanupResult?.MemoryUsageAfterPercentage.ToString("F1") + "%" ?? "0.0%";
+    
+    public string TotalProcessMemoryFreedFormatted => LastCleanupResult?.TotalProcessMemoryFreedGB.ToString("F1") + " GB" ?? "0.0 GB";
+
+    // Formatted properties for basic memory info
+    public string TotalMemoryFormatted => MemoryInfo?.TotalPhysicalGB.ToString("F1") + " GB" ?? "0.0 GB";
+    public string AvailableMemoryFormatted => MemoryInfo?.AvailablePhysicalGB.ToString("F1") + " GB" ?? "0.0 GB";
+    public string UsedMemoryFormatted => MemoryInfo?.UsedPhysicalGB.ToString("F1") + " GB" ?? "0.0 GB";
+    public string UsagePercentageFormatted => MemoryInfo?.UsagePercentage.ToString("P1") ?? "0.0%";
+
+    // Property for progress bar (0-1 ratio)
+    public double UsagePercentageRatio => MemoryInfo?.UsagePercentage / 100.0 ?? 0.0;
+
+    // Property for sorted processes
+    public List<ProcessCleanupInfo> SortedProcesses => LastCleanupResult?.GetProcessesSortedByMemoryFreed() ?? new List<ProcessCleanupInfo>();
 
     public List<ProcessInfo> TopProcesses
     {
@@ -65,7 +124,7 @@ public class MemoryViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _isMonitoring, value);
     }
 
-    // Options de nettoyage avancées
+    // Advanced cleaning options
     public bool IncludeGarbageCollection
     {
         get => _includeGarbageCollection;
@@ -102,7 +161,7 @@ public class MemoryViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _includeNonPagedPool, value);
     }
 
-    // Commandes simples sans observables complexes
+    // Commands
     public ICommand OptimizeMemoryCommand { get; }
     public ICommand RefreshCommand { get; }
     public ICommand ToggleMonitoringCommand { get; }
@@ -112,7 +171,7 @@ public class MemoryViewModel : ViewModelBase
         _memoryService = memoryService;
         _logger = logger;
 
-        // Commandes simples pour éviter les problèmes de thread
+        // Simple commands to avoid thread issues
         OptimizeMemoryCommand = new RelayCommand(async () => await OptimizeMemoryAsync(), () => !IsCleaning);
         RefreshCommand = new RelayCommand(async () => await RefreshMemoryInfoAsync());
         ToggleMonitoringCommand = new RelayCommand(() => ToggleMonitoring());
@@ -123,7 +182,7 @@ public class MemoryViewModel : ViewModelBase
 
     private async Task OptimizeMemoryAsync()
     {
-        // Vérification thread-safe de l'état
+        // Thread-safe state check
         if (IsCleaning) return;
 
         try
@@ -131,7 +190,7 @@ public class MemoryViewModel : ViewModelBase
             await Dispatcher.UIThread.InvokeAsync(() => IsCleaning = true);
             _logger.LogInformation("Starting aggressive memory optimization");
 
-            // Créer les options de nettoyage basées sur les sélections de l'utilisateur
+            // Create cleanup options based on user selections
             var options = new MemoryCleanupOptions
             {
                 IncludeGarbageCollection = IncludeGarbageCollection,
@@ -144,13 +203,13 @@ public class MemoryViewModel : ViewModelBase
 
             var result = await _memoryService.CleanMemoryAsync(options);
             
-            // Mise à jour sur le thread UI
+            // Update on UI thread
             await Dispatcher.UIThread.InvokeAsync(() => LastCleanupResult = result);
 
             // Also load top processes
             await LoadTopProcessesAsync();
             
-            _logger.LogInformation("Aggressive memory optimization completed. Freed: {0} MB", result.SpaceFreedMB);
+            _logger.LogInformation("Aggressive memory optimization completed. Total freed: {0} MB", result.TotalMemoryFreedMB);
         }
         catch (Exception ex)
         {

@@ -8,9 +8,11 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using GameBooster.Core.Services;
 using GameBooster.Common.Interfaces;
+using System.Runtime.Versioning;
 
 namespace GameBooster.UI;
 
+[SupportedOSPlatform("windows")]
 public partial class App : Application
 {
     private IHost? _host;
@@ -39,11 +41,15 @@ public partial class App : Application
                     services.AddSingleton<IMemoryService, MemoryService>();
                     services.AddSingleton<IDiskService, DiskService>();
                     services.AddSingleton<ISchedulerService, SchedulerService>();
+                    services.AddSingleton<IWindowsServiceManager, WindowsServiceManager>();
+                    services.AddSingleton<INetworkService, NetworkService>();
 
                     // ViewModels des onglets
                     services.AddTransient<MemoryViewModel>();
                     services.AddTransient<DiskViewModel>();
                     services.AddTransient<SchedulerViewModel>();
+                    services.AddTransient<ServicesViewModel>();
+                    services.AddTransient<NetworkViewModel>();
 
                     // ViewModel principal avec injection des ViewModels des onglets
                     services.AddTransient<MainWindowViewModel>(provider =>
@@ -51,18 +57,26 @@ public partial class App : Application
                         var memoryService = provider.GetRequiredService<IMemoryService>();
                         var diskService = provider.GetRequiredService<IDiskService>();
                         var schedulerService = provider.GetRequiredService<ISchedulerService>();
+                        var windowsServiceManager = provider.GetRequiredService<IWindowsServiceManager>();
+                        var networkService = provider.GetRequiredService<INetworkService>();
                         var memoryViewModel = provider.GetRequiredService<MemoryViewModel>();
                         var diskViewModel = provider.GetRequiredService<DiskViewModel>();
                         var schedulerViewModel = provider.GetRequiredService<SchedulerViewModel>();
+                        var servicesViewModel = provider.GetRequiredService<ServicesViewModel>();
+                        var networkViewModel = provider.GetRequiredService<NetworkViewModel>();
                         var logger = provider.GetRequiredService<ILogger<MainWindowViewModel>>();
 
                         return new MainWindowViewModel(
                             memoryService,
                             diskService,
                             schedulerService,
+                            windowsServiceManager,
+                            networkService,
                             memoryViewModel,
                             diskViewModel,
                             schedulerViewModel,
+                            servicesViewModel,
+                            networkViewModel,
                             logger);
                     });
 

@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia;
 using Avalonia.Media;
+using Avalonia.Markup.Xaml;
 
 namespace GameBooster.UI.Controls;
 
@@ -8,12 +9,6 @@ public partial class StatCard : UserControl
 {
     public static readonly StyledProperty<string> IconProperty =
         AvaloniaProperty.Register<StatCard, string>(nameof(Icon), "📊");
-
-    public static readonly StyledProperty<string> IconNameProperty =
-        AvaloniaProperty.Register<StatCard, string>(nameof(IconName), "chart-bar");
-
-    public static readonly StyledProperty<string> IconColorProperty =
-        AvaloniaProperty.Register<StatCard, string>(nameof(IconColor), "#FFFFFF");
 
     public static readonly StyledProperty<string> LabelProperty =
         AvaloniaProperty.Register<StatCard, string>(nameof(Label), "Statistic");
@@ -42,18 +37,6 @@ public partial class StatCard : UserControl
         set => SetValue(IconProperty, value);
     }
 
-    public string IconName
-    {
-        get => GetValue(IconNameProperty);
-        set => SetValue(IconNameProperty, value);
-    }
-
-    public string IconColor
-    {
-        get => GetValue(IconColorProperty);
-        set => SetValue(IconColorProperty, value);
-    }
-
     public string Label
     {
         get => GetValue(LabelProperty);
@@ -63,11 +46,7 @@ public partial class StatCard : UserControl
     public string Value
     {
         get => GetValue(ValueProperty);
-        set 
-        { 
-            DebugLogger.LogProperty($"StatCard[{Label}].Value", value);
-            SetValue(ValueProperty, value);
-        }
+        set => SetValue(ValueProperty, value);
     }
 
     public IBrush ValueColor
@@ -102,9 +81,11 @@ public partial class StatCard : UserControl
 
     public StatCard()
     {
-        DebugLogger.LogAction("CONSTRUCTEUR StatCard");
         InitializeComponent();
-        // Ne pas définir DataContext = this car cela interfère avec les bindings depuis le parent
-        DebugLogger.LogAction("StatCard InitializeComponent terminé");
+    }
+
+    private void InitializeComponent()
+    {
+        AvaloniaXamlLoader.Load(this);
     }
 }

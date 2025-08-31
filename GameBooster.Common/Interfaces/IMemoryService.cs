@@ -3,32 +3,32 @@ using GameBooster.Common.Models;
 namespace GameBooster.Common.Interfaces;
 
 /// <summary>
-/// Interface pour les services de gestion de la mémoire système
+/// Interface for system memory management services
 /// </summary>
 public interface IMemoryService
 {
     /// <summary>
-    /// Obtient les informations actuelles sur la mémoire
+    /// Gets current memory information
     /// </summary>
     Task<MemoryInfo> GetMemoryInfoAsync();
 
     /// <summary>
-    /// Nettoie la mémoire système avec options avancées
+    /// Cleans system memory with advanced options
     /// </summary>
-    Task<CleanupResult> CleanMemoryAsync(MemoryCleanupOptions? options = null);
+    Task<MemoryCleanupResult> CleanMemoryAsync(MemoryCleanupOptions? options = null);
 
     /// <summary>
-    /// Obtient la liste des processus utilisant le plus de mémoire
+    /// Gets the list of processes using the most memory
     /// </summary>
     Task<List<ProcessInfo>> GetTopMemoryProcessesAsync(int count = 10);
 
     /// <summary>
-    /// Optimise la mémoire en libérant les ressources inutilisées
+    /// Optimizes memory by freeing unused resources
     /// </summary>
-    Task<CleanupResult> OptimizeMemoryAsync();
+    Task<MemoryCleanupResult> OptimizeMemoryAsync();
 
     /// <summary>
-    /// Surveille la mémoire en temps réel
+    /// Monitors memory in real-time
     /// </summary>
     IObservable<MemoryInfo> MonitorMemoryAsync();
 }

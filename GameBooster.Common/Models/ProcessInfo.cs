@@ -53,6 +53,11 @@ public class ProcessInfo
     /// </summary>
     public DateTime StartTime { get; set; }
 
+    // Formatted properties for display
+    public string MemoryUsageFormatted => (MemoryUsage / (1024.0 * 1024.0)).ToString("F1") + " MB";
+    public string ProcessIdFormatted => $"PID: {ProcessId}";
+    public string CpuUsageFormatted => $"{CpuUsage:F1}%";
+
     /// <summary>
     /// Indique si le processus est actif
     /// </summary>

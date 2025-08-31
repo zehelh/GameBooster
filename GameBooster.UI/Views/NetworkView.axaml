@@ -1,0 +1,335 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="GameBooster.UI.Views.NetworkView">
+    
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <StackPanel Grid.Row="0" Margin="0,0,0,20">
+                <TextBlock Text="🌐 Network Management" 
+                           FontSize="24" FontWeight="Bold" 
+                           Foreground="White"
+                           Margin="0,0,0,10"/>
+                <TextBlock Text="Monitor and control network usage with QoS policies" 
+                           FontSize="14" Opacity="0.7" 
+                           Foreground="#CCCCCC"/>
+            </StackPanel>
+
+            <!-- Main Content -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Network Processes Panel -->
+                <Border Grid.Column="0" 
+                        Background="#1A1A2E" 
+                        CornerRadius="8" 
+                        Padding="20"
+                        BorderBrush="#333" 
+                        BorderThickness="1"
+                        Margin="0,0,10,0">
+                    <StackPanel Spacing="15">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="📊" FontSize="24"/>
+                            <TextBlock Text="Network Processes" 
+                                       FontSize="18" FontWeight="Bold" 
+                                       Foreground="White"/>
+                        </StackPanel>
+                        
+                        <TextBlock Text="Monitor and limit network usage by process" 
+                                   FontSize="12" Opacity="0.7"/>
+                        
+                        <!-- Speed Limit Control -->
+                        <Border Background="#0F0F23" CornerRadius="6" Padding="15">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="🔧 Speed Limit Control" 
+                                           FontSize="14" FontWeight="Bold" 
+                                           Foreground="White"/>
+                                
+                                <Grid ColumnDefinitions="*,Auto,Auto">
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Speed Limit (Kbps)" FontSize="12" Opacity="0.7"/>
+                                        <TextBlock Text="{Binding SelectedSpeedLimit}" 
+                                                   FontSize="16" FontWeight="Bold" 
+                                                   Foreground="LightGreen"/>
+                                    </StackPanel>
+                                    
+                                    <Slider Grid.Column="1" 
+                                            Value="{Binding SelectedSpeedLimit}"
+                                            Minimum="100" 
+                                            Maximum="10000" 
+                                            Width="200"
+                                            Margin="10,0"/>
+                                    
+                                    <StackPanel Grid.Column="2" HorizontalAlignment="Right">
+                                        <TextBlock Text="100 Kbps" FontSize="10" Opacity="0.7"/>
+                                        <TextBlock Text="10 Mbps" FontSize="10" Opacity="0.7"/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                        
+                        <!-- Network Statistics -->
+                        <Border Background="#0F0F23" CornerRadius="6" Padding="15"
+                                IsVisible="{Binding NetworkStats, Converter={x:Static ObjectConverters.IsNotNull}}">
+                            <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto">
+                                <StackPanel Grid.Column="0" Grid.Row="0">
+                                    <TextBlock Text="Total Processes" FontSize="10" Opacity="0.7"/>
+                                    <TextBlock Text="{Binding NetworkStats.TotalProcesses}" 
+                                               FontSize="14" FontWeight="Bold" 
+                                               Foreground="White"/>
+                                </StackPanel>
+                                
+                                <StackPanel Grid.Column="1" Grid.Row="0">
+                                    <TextBlock Text="Limited Processes" FontSize="10" Opacity="0.7"/>
+                                    <TextBlock Text="{Binding NetworkStats.LimitedProcessesCount}" 
+                                               FontSize="14" FontWeight="Bold" 
+                                               Foreground="#FFA500"/>
+                                </StackPanel>
+                                
+                                <StackPanel Grid.Column="2" Grid.Row="0">
+                                    <TextBlock Text="Total Traffic" FontSize="10" Opacity="0.7"/>
+                                    <TextBlock Text="{Binding NetworkStats.TotalBytesFormatted}" 
+                                               FontSize="14" FontWeight="Bold" 
+                                               Foreground="#00D4FF"/>
+                                </StackPanel>
+                                
+                                <StackPanel Grid.Column="0" Grid.Row="1">
+                                    <TextBlock Text="Upload Speed" FontSize="10" Opacity="0.7"/>
+                                    <TextBlock Text="{Binding NetworkStats.CurrentUploadSpeedFormatted}" 
+                                               FontSize="12" Foreground="LightGreen"/>
+                                </StackPanel>
+                                
+                                <StackPanel Grid.Column="1" Grid.Row="1">
+                                    <TextBlock Text="Download Speed" FontSize="10" Opacity="0.7"/>
+                                    <TextBlock Text="{Binding NetworkStats.CurrentDownloadSpeedFormatted}" 
+                                               FontSize="12" Foreground="LightGreen"/>
+                                </StackPanel>
+                                
+                                <StackPanel Grid.Column="2" Grid.Row="1">
+                                    <TextBlock Text="Limited %" FontSize="10" Opacity="0.7"/>
+                                    <TextBlock Text="{Binding NetworkStats.LimitedProcessesPercentageFormatted}" 
+                                               FontSize="12" Foreground="#FFA500"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                        
+                        <!-- Network Processes List -->
+                        <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding NetworkProcesses}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#0F0F23" 
+                                                Padding="12" 
+                                                Margin="0,4" 
+                                                CornerRadius="6">
+                                            <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+                                                <StackPanel Grid.Column="0">
+                                                    <TextBlock Text="{Binding Name}" 
+                                                               FontSize="12" 
+                                                               FontWeight="Bold"
+                                                               Foreground="White"/>
+                                                    <TextBlock Text="{Binding ProcessIdFormatted}" 
+                                                               FontSize="10" 
+                                                               Foreground="#AAAAAA"/>
+                                                    <TextBlock Text="{Binding TotalBytesFormatted}" 
+                                                               FontSize="10" 
+                                                               Foreground="#00D4FF"/>
+                                                </StackPanel>
+                                                
+                                                <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                                                    <TextBlock Text="Upload" FontSize="9" Opacity="0.7"/>
+                                                    <TextBlock Text="{Binding CurrentUploadSpeedFormatted}" 
+                                                               FontSize="10" Foreground="LightGreen"/>
+                                                    <TextBlock Text="Download" FontSize="9" Opacity="0.7"/>
+                                                    <TextBlock Text="{Binding CurrentDownloadSpeedFormatted}" 
+                                                               FontSize="10" Foreground="LightGreen"/>
+                                                </StackPanel>
+                                                
+                                                <StackPanel Grid.Column="2" HorizontalAlignment="Right">
+                                                    <TextBlock Text="Limit" FontSize="9" Opacity="0.7"/>
+                                                    <TextBlock Text="{Binding SpeedLimitFormatted}" 
+                                                               FontSize="10" 
+                                                               Foreground="{Binding StatusColor}"/>
+                                                    <TextBlock Text="Connections" FontSize="9" Opacity="0.7"/>
+                                                    <TextBlock Text="{Binding Connections}" 
+                                                               FontSize="10" Foreground="#AAAAAA"/>
+                                                </StackPanel>
+                                                
+                                                <StackPanel Grid.Column="3" HorizontalAlignment="Right" Spacing="5">
+                                                    <Button Content="🚫" 
+                                                            Command="{Binding DataContext.SetSpeedLimitCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Background="#FFA500"
+                                                            Foreground="Black"
+                                                            FontSize="10"
+                                                            Padding="8,4"
+                                                            CornerRadius="4"
+                                                            IsEnabled="{Binding IsLimited, Converter={x:Static BoolConverters.Not}}"/>
+                                                    
+                                                    <Button Content="✅" 
+                                                            Command="{Binding DataContext.RemoveSpeedLimitCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Background="LightGreen"
+                                                            Foreground="Black"
+                                                            FontSize="10"
+                                                            Padding="8,4"
+                                                            CornerRadius="4"
+                                                            IsEnabled="{Binding IsLimited}"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                        
+                        <!-- Control Buttons -->
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Button Content="🔄 Refresh" 
+                                    Command="{Binding RefreshCommand}"
+                                    Background="#333" 
+                                    Foreground="White"
+                                    FontSize="12"
+                                    Padding="15,8"
+                                    CornerRadius="6"/>
+                            
+                            <Button Content="{Binding IsMonitoring, Converter={x:Static BoolConverters.Not}, ConverterParameter=Start Monitoring, FallbackValue=Stop Monitoring}" 
+                                    Command="{Binding IsMonitoring, Converter={x:Static BoolConverters.Not}, ConverterParameter=StartMonitoringCommand, FallbackValue=StopMonitoringCommand}"
+                                    Background="{Binding IsMonitoring, Converter={x:Static BoolConverters.Not}, ConverterParameter=LightGreen, FallbackValue=#FF4444}"
+                                    Foreground="Black"
+                                    FontWeight="Bold"
+                                    FontSize="12"
+                                    Padding="15,8"
+                                    CornerRadius="6"/>
+                            
+                            <Button Content="🗑️ Clear All Limits" 
+                                    Command="{Binding ClearAllLimitsCommand}"
+                                    Background="#FF4444" 
+                                    Foreground="White"
+                                    FontSize="12"
+                                    Padding="15,8"
+                                    CornerRadius="6"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- QoS Policies Panel -->
+                <Border Grid.Column="1" 
+                        Background="#1A1A2E" 
+                        CornerRadius="8" 
+                        Padding="20"
+                        BorderBrush="#333" 
+                        BorderThickness="1"
+                        Margin="10,0,0,0">
+                    <StackPanel Spacing="15">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="⚙️" FontSize="20"/>
+                            <TextBlock Text="QoS Policies" 
+                                       FontSize="16" FontWeight="Bold" 
+                                       Foreground="White"/>
+                        </StackPanel>
+                        
+                        <TextBlock Text="Active Quality of Service policies" 
+                                   FontSize="12" Opacity="0.7"/>
+                        
+                        <!-- QoS Policies List -->
+                        <ScrollViewer MaxHeight="400" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding QosPolicies}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#0F0F23" 
+                                                Padding="12" 
+                                                Margin="0,4" 
+                                                CornerRadius="6">
+                                            <StackPanel Spacing="5">
+                                                <Grid ColumnDefinitions="*,Auto">
+                                                    <StackPanel Grid.Column="0">
+                                                        <TextBlock Text="{Binding Name}" 
+                                                                   FontSize="12" 
+                                                                   FontWeight="Bold"
+                                                                   Foreground="White"/>
+                                                        <TextBlock Text="{Binding AppName}" 
+                                                                   FontSize="10" 
+                                                                   Foreground="#AAAAAA"/>
+                                                    </StackPanel>
+                                                    
+                                                    <Button Grid.Column="1" 
+                                                            Content="🗑️" 
+                                                            Command="{Binding DataContext.RemoveQosPolicyCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Background="#FF4444"
+                                                            Foreground="White"
+                                                            FontSize="10"
+                                                            Padding="8,4"
+                                                            CornerRadius="4"/>
+                                                </Grid>
+                                                
+                                                <Grid ColumnDefinitions="*,*">
+                                                    <StackPanel Grid.Column="0">
+                                                        <TextBlock Text="Throttle Rate" FontSize="9" Opacity="0.7"/>
+                                                        <TextBlock Text="{Binding ThrottleRateFormatted}" 
+                                                                   FontSize="10" Foreground="#00D4FF"/>
+                                                    </StackPanel>
+                                                    
+                                                    <StackPanel Grid.Column="1">
+                                                        <TextBlock Text="Status" FontSize="9" Opacity="0.7"/>
+                                                        <TextBlock Text="{Binding Status}" 
+                                                                   FontSize="10" 
+                                                                   Foreground="{Binding StatusColor}"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Status Bar -->
+            <Border Grid.Row="2" 
+                    Background="#1A1A2E" 
+                    CornerRadius="6" 
+                    Margin="0,10,0,0" 
+                    Padding="15,10"
+                    BorderBrush="#333" 
+                    BorderThickness="1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="📡" FontSize="16"/>
+                        <TextBlock Text="Network monitoring" 
+                                   FontSize="12" 
+                                   Foreground="White"/>
+                        <TextBlock Text="{Binding IsMonitoring, Converter={x:Static BoolConverters.Not}, ConverterParameter=Stopped, FallbackValue=Active}" 
+                                   FontSize="12" 
+                                   Foreground="{Binding IsMonitoring, Converter={x:Static BoolConverters.Not}, ConverterParameter=#FF4444, FallbackValue=#00D4FF}"/>
+                    </StackPanel>
+                    
+                    <TextBlock Grid.Column="1" 
+                               Text="{Binding NetworkStats.TotalProcesses, StringFormat='{0} processes monitored'}" 
+                               FontSize="11" 
+                               Foreground="#AAAAAA"/>
+                </Grid>
+            </Border>
+        </Grid>
+    </ScrollViewer>
+</UserControl>
