@@ -446,13 +446,13 @@
                     <TextBlock Text="Real-time monitoring" 
                                FontSize="12" 
                                Foreground="White"/>
-                    <TextBlock Text="{Binding IsMonitoring, Converter={x:Static BoolConverters.Not}, ConverterParameter=Stopped, FallbackValue=Active}" 
+                    <TextBlock Text="{Binding MonitoringStatusText}" 
                                FontSize="12" 
-                               Foreground="{Binding IsMonitoring, Converter={x:Static BoolConverters.Not}, ConverterParameter=#FF4444, FallbackValue=#00D4FF}"/>
+                               Foreground="{Binding MonitoringStatusColor}"/>
                 </StackPanel>
                 
                 <Button Grid.Column="1" 
-                        Content="{Binding IsMonitoring, Converter={x:Static BoolConverters.Not}, ConverterParameter=Start, FallbackValue=Stop}" 
+                        Content="{Binding MonitoringButtonText}" 
                         Command="{Binding ToggleMonitoringCommand}"
                         Background="#333" 
                         Foreground="White"

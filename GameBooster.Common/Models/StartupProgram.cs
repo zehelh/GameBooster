@@ -78,4 +78,14 @@ public class StartupProgram
     /// Status color for UI
     /// </summary>
     public string StatusColor => IsEnabled ? "#FF4444" : "LightGreen";
+
+    /// <summary>
+    /// Toggle button text for UI
+    /// </summary>
+    public string ToggleButtonText => IsEnabled ? "Disable" : "Enable";
+
+    /// <summary>
+    /// Toggle button color for UI
+    /// </summary>
+    public string ToggleButtonColor => IsEnabled ? "LightGreen" : "#FF4444";
 }

@@ -54,4 +54,20 @@ public class DefenderStatus
     /// Status color for UI
     /// </summary>
     public string StatusColor => IsProtected ? "LightGreen" : "#FF4444";
+
+    // Propriétés calculées pour l'interface utilisateur
+    public string RealTimeProtectionText => RealTimeProtection ? "Enabled" : "Disabled";
+    public string RealTimeProtectionColor => RealTimeProtection ? "LightGreen" : "#FF4444";
+    
+    public string CloudProtectionText => CloudProtection ? "Enabled" : "Disabled";
+    public string CloudProtectionColor => CloudProtection ? "LightGreen" : "#FF4444";
+    
+    public string TamperProtectionText => TamperProtection ? "Enabled" : "Disabled";
+    public string TamperProtectionColor => TamperProtection ? "LightGreen" : "#FF4444";
+    
+    public string AutomaticSampleSubmissionText => AutomaticSampleSubmission ? "Enabled" : "Disabled";
+    public string AutomaticSampleSubmissionColor => AutomaticSampleSubmission ? "LightGreen" : "#FF4444";
+    
+    public string ProtectionButtonText => IsProtected ? "Disable Protection" : "Enable Protection";
+    public string ProtectionButtonColor => IsProtected ? "#FF4444" : "LightGreen";
 }

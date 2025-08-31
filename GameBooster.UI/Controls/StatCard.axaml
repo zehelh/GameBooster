@@ -45,7 +45,7 @@
                  FontSize="12" 
                  Foreground="#888"
                  HorizontalAlignment="Center"
-                 IsVisible="{Binding #statCard.SubText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                 IsVisible="{Binding #statCard.HasSubText}"/>
     </StackPanel>
   </Border>
 </UserControl>

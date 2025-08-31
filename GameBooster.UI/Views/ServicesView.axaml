@@ -73,32 +73,32 @@
                                     <Border Grid.Column="0" Grid.Row="0" Background="#1A1A2E" CornerRadius="4" Padding="8" Margin="2">
                                         <StackPanel>
                                             <TextBlock Text="Real-time Protection" FontSize="10" Opacity="0.7"/>
-                                            <TextBlock Text="{Binding DefenderStatus.RealTimeProtection, Converter={x:Static BoolConverters.Not}, ConverterParameter=Disabled, FallbackValue=Enabled}" 
-                                                       FontSize="11" Foreground="{Binding DefenderStatus.RealTimeProtection, Converter={x:Static BoolConverters.Not}, ConverterParameter=#FF4444, FallbackValue=LightGreen}"/>
+                                            <TextBlock Text="{Binding DefenderStatus.RealTimeProtectionText}" 
+                                                       FontSize="11" Foreground="{Binding DefenderStatus.RealTimeProtectionColor}"/>
                                         </StackPanel>
                                     </Border>
                                     
                                     <Border Grid.Column="1" Grid.Row="0" Background="#1A1A2E" CornerRadius="4" Padding="8" Margin="2">
                                         <StackPanel>
                                             <TextBlock Text="Cloud Protection" FontSize="10" Opacity="0.7"/>
-                                            <TextBlock Text="{Binding DefenderStatus.CloudProtection, Converter={x:Static BoolConverters.Not}, ConverterParameter=Disabled, FallbackValue=Enabled}" 
-                                                       FontSize="11" Foreground="{Binding DefenderStatus.CloudProtection, Converter={x:Static BoolConverters.Not}, ConverterParameter=#FF4444, FallbackValue=LightGreen}"/>
+                                            <TextBlock Text="{Binding DefenderStatus.CloudProtectionText}" 
+                                                       FontSize="11" Foreground="{Binding DefenderStatus.CloudProtectionColor}"/>
                                         </StackPanel>
                                     </Border>
                                     
                                     <Border Grid.Column="0" Grid.Row="1" Background="#1A1A2E" CornerRadius="4" Padding="8" Margin="2">
                                         <StackPanel>
                                             <TextBlock Text="Tamper Protection" FontSize="10" Opacity="0.7"/>
-                                            <TextBlock Text="{Binding DefenderStatus.TamperProtection, Converter={x:Static BoolConverters.Not}, ConverterParameter=Disabled, FallbackValue=Enabled}" 
-                                                       FontSize="11" Foreground="{Binding DefenderStatus.TamperProtection, Converter={x:Static BoolConverters.Not}, ConverterParameter=#FF4444, FallbackValue=LightGreen}"/>
+                                            <TextBlock Text="{Binding DefenderStatus.TamperProtectionText}" 
+                                                       FontSize="11" Foreground="{Binding DefenderStatus.TamperProtectionColor}"/>
                                         </StackPanel>
                                     </Border>
                                     
                                     <Border Grid.Column="1" Grid.Row="1" Background="#1A1A2E" CornerRadius="4" Padding="8" Margin="2">
                                         <StackPanel>
                                             <TextBlock Text="Sample Submission" FontSize="10" Opacity="0.7"/>
-                                            <TextBlock Text="{Binding DefenderStatus.AutomaticSampleSubmission, Converter={x:Static BoolConverters.Not}, ConverterParameter=Disabled, FallbackValue=Enabled}" 
-                                                       FontSize="11" Foreground="{Binding DefenderStatus.AutomaticSampleSubmission, Converter={x:Static BoolConverters.Not}, ConverterParameter=#FF4444, FallbackValue=LightGreen}"/>
+                                            <TextBlock Text="{Binding DefenderStatus.AutomaticSampleSubmissionText}" 
+                                                       FontSize="11" Foreground="{Binding DefenderStatus.AutomaticSampleSubmissionColor}"/>
                                         </StackPanel>
                                     </Border>
                                 </Grid>
@@ -107,9 +107,9 @@
                         
                         <!-- Defender Actions -->
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <Button Content="{Binding DefenderStatus.IsProtected, Converter={x:Static BoolConverters.Not}, ConverterParameter=Disable Protection, FallbackValue=Enable Protection}" 
+                            <Button Content="{Binding DefenderStatus.ProtectionButtonText}" 
                                     Command="{Binding ToggleDefenderCommand}"
-                                    Background="{Binding DefenderStatus.IsProtected, Converter={x:Static BoolConverters.Not}, ConverterParameter=#FF4444, FallbackValue=LightGreen}"
+                                    Background="{Binding DefenderStatus.ProtectionButtonColor}"
                                     Foreground="Black"
                                     FontWeight="Bold"
                                     FontSize="12"
@@ -128,7 +128,7 @@
                         
                         <!-- Elevation Warning -->
                         <Border Background="#FF4444" CornerRadius="6" Padding="10"
-                                IsVisible="{Binding IsElevated, Converter={x:Static BoolConverters.Not}}">
+                                IsVisible="{Binding IsNotElevated}">
                             <TextBlock Text="⚠️ Administrator privileges required for service management" 
                                        FontSize="11" Foreground="White" TextWrapping="Wrap"/>
                         </Border>
@@ -174,7 +174,7 @@
                                                                Foreground="#AAAAAA"/>
                                                     <TextBlock Text="{Binding Status}" 
                                                                FontSize="10" 
-                                                               Foreground="{Binding IsRunning, Converter={x:Static BoolConverters.Not}, ConverterParameter=#FF4444, FallbackValue=LightGreen}"/>
+                                                               Foreground="{Binding StatusColor}"/>
                                                 </StackPanel>
                                                 
                                                 <StackPanel Grid.Column="1" HorizontalAlignment="Right" Spacing="5">
@@ -283,10 +283,10 @@
                                             </StackPanel>
                                             
                                             <Button Grid.Column="2" 
-                                                    Content="{Binding IsEnabled, Converter={x:Static BoolConverters.Not}, ConverterParameter=Enable, FallbackValue=Disable}" 
+                                                    Content="{Binding ToggleButtonText}" 
                                                     Command="{Binding DataContext.ToggleStartupProgramCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}"
-                                                    Background="{Binding IsEnabled, Converter={x:Static BoolConverters.Not}, ConverterParameter=LightGreen, FallbackValue=#FF4444}"
+                                                    Background="{Binding ToggleButtonColor}"
                                                     Foreground="Black"
                                                     FontSize="10"
                                                     Padding="12,6"

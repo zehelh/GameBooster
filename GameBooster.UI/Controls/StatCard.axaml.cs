@@ -31,6 +31,9 @@ public partial class StatCard : UserControl
     public static readonly StyledProperty<IBrush> ProgressColorProperty =
         AvaloniaProperty.Register<StatCard, IBrush>(nameof(ProgressColor), Brush.Parse("#00D4FF"));
 
+    public static readonly StyledProperty<bool> HasSubTextProperty =
+        AvaloniaProperty.Register<StatCard, bool>(nameof(HasSubText), false);
+
     public string Icon
     {
         get => GetValue(IconProperty);
@@ -79,9 +82,21 @@ public partial class StatCard : UserControl
         set => SetValue(ProgressColorProperty, value);
     }
 
+    public bool HasSubText
+    {
+        get => GetValue(HasSubTextProperty);
+        set => SetValue(HasSubTextProperty, value);
+    }
+
     public StatCard()
     {
         InitializeComponent();
+        
+        // Mettre à jour HasSubText quand SubText change
+        this.GetObservable(SubTextProperty).Subscribe(subText =>
+        {
+            HasSubText = !string.IsNullOrEmpty(subText);
+        });
     }
 
     private void InitializeComponent()

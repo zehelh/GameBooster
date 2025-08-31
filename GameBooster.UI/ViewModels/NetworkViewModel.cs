@@ -87,8 +87,28 @@ public class NetworkViewModel : ViewModelBase
     public bool IsMonitoring
     {
         get => _isMonitoring;
-        set => this.RaiseAndSetIfChanged(ref _isMonitoring, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _isMonitoring, value);
+            // Trigger property change notifications for monitoring properties
+            this.RaisePropertyChanged(nameof(MonitoringStatusText));
+            this.RaisePropertyChanged(nameof(MonitoringStatusColor));
+            this.RaisePropertyChanged(nameof(MonitoringButtonText));
+            this.RaisePropertyChanged(nameof(MonitoringButtonColor));
+        }
     }
+
+    // Calculated properties for monitoring UI
+    public string MonitoringStatusText => IsMonitoring ? "Active" : "Stopped";
+    public string MonitoringStatusColor => IsMonitoring ? "#00D4FF" : "#FF4444";
+    public string MonitoringButtonText => IsMonitoring ? "Stop Monitoring" : "Start Monitoring";
+    public string MonitoringButtonColor => IsMonitoring ? "#FF4444" : "LightGreen";
+    public bool IsNotLimited => !IsLimited;
+    
+    /// <summary>
+    /// Whether the selected process is limited
+    /// </summary>
+    public bool IsLimited => SelectedProcess?.IsLimited ?? false;
 
     /// <summary>
     /// Selected speed limit in Kbps

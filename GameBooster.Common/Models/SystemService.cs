@@ -72,6 +72,21 @@ public class SystemService
     /// Utilisation mémoire en MB
     /// </summary>
     public double MemoryUsageMB => MemoryUsage / (1024.0 * 1024.0);
+
+    /// <summary>
+    /// Indique si le service est en cours d'exécution
+    /// </summary>
+    public bool IsRunning => Status == ServiceStatus.Running;
+
+    /// <summary>
+    /// Indique si le service peut être démarré
+    /// </summary>
+    public bool CanStart => Status == ServiceStatus.Stopped;
+
+    /// <summary>
+    /// Couleur du statut pour l'interface utilisateur
+    /// </summary>
+    public string StatusColor => IsRunning ? "LightGreen" : "#FF4444";
 }
 
 /// <summary>

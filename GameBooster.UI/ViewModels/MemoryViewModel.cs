@@ -121,8 +121,20 @@ public class MemoryViewModel : ViewModelBase
     public bool IsMonitoring
     {
         get => _isMonitoring;
-        set => this.RaiseAndSetIfChanged(ref _isMonitoring, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _isMonitoring, value);
+            // Trigger property change notifications for monitoring properties
+            this.RaisePropertyChanged(nameof(MonitoringStatusText));
+            this.RaisePropertyChanged(nameof(MonitoringStatusColor));
+            this.RaisePropertyChanged(nameof(MonitoringButtonText));
+        }
     }
+
+    // Calculated properties for monitoring UI
+    public string MonitoringStatusText => IsMonitoring ? "Active" : "Stopped";
+    public string MonitoringStatusColor => IsMonitoring ? "#00D4FF" : "#FF4444";
+    public string MonitoringButtonText => IsMonitoring ? "Stop" : "Start";
 
     // Advanced cleaning options
     public bool IncludeGarbageCollection

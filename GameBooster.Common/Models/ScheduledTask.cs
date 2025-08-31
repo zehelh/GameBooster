@@ -74,6 +74,27 @@ public class ScheduledTask
     /// Paramètres spécifiques à la tâche (JSON)
     /// </summary>
     public string? Parameters { get; set; }
+
+    /// <summary>
+    /// Propriétés calculées pour l'interface utilisateur
+    /// </summary>
+    public string StatusText => IsEnabled ? "Enabled" : "Disabled";
+    public string StatusColor => IsEnabled ? "#4CAF50" : "#FF4444";
+    public string Schedule => GetScheduleDescription();
+    
+    private string GetScheduleDescription()
+    {
+        return Frequency switch
+        {
+            TaskFrequency.Once => "Once",
+            TaskFrequency.Daily => $"Daily at {ExecutionTime:hh\\:mm}",
+            TaskFrequency.Weekly => $"Weekly on {DayOfWeek} at {ExecutionTime:hh\\:mm}",
+            TaskFrequency.Monthly => $"Monthly on day {DayOfMonth} at {ExecutionTime:hh\\:mm}",
+            TaskFrequency.OnStartup => "On Startup",
+            TaskFrequency.OnShutdown => "On Shutdown",
+            _ => "Unknown"
+        };
+    }
 }
 
 /// <summary>

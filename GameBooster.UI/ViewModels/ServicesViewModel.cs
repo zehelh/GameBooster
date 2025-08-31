@@ -90,6 +90,11 @@ public class ServicesViewModel : ViewModelBase
     }
 
     /// <summary>
+    /// Whether the application does NOT have elevated privileges
+    /// </summary>
+    public bool IsNotElevated => !IsElevated;
+
+    /// <summary>
     /// Selected service for operations
     /// </summary>
     public SystemService? SelectedService

@@ -82,10 +82,10 @@
                                                 <!-- Task Status -->
                                                 <StackPanel Grid.Column="2" Grid.Row="0" 
                                                             HorizontalAlignment="Right">
-                                                    <Border Background="{Binding IsEnabled, Converter={x:Static BoolConverters.Not}, ConverterParameter=#4CAF50, FallbackValue=#FF4444}" 
+                                                    <Border Background="{Binding StatusColor}" 
                                                             Padding="8,4" 
                                                             CornerRadius="4">
-                                                        <TextBlock Text="{Binding IsEnabled, Converter={x:Static BoolConverters.Not}, ConverterParameter=Enabled, FallbackValue=Disabled}" 
+                                                        <TextBlock Text="{Binding StatusText}" 
                                                                    FontSize="10" FontWeight="Bold" 
                                                                    Foreground="White"/>
                                                     </Border>

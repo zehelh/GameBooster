@@ -176,7 +176,7 @@
                                                             FontSize="10"
                                                             Padding="8,4"
                                                             CornerRadius="4"
-                                                            IsEnabled="{Binding IsLimited, Converter={x:Static BoolConverters.Not}}"/>
+                                                            IsEnabled="{Binding IsNotLimited}"/>
                                                     
                                                     <Button Content="✅" 
                                                             Command="{Binding DataContext.RemoveSpeedLimitCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -205,9 +205,9 @@
                                     Padding="15,8"
                                     CornerRadius="6"/>
                             
-                            <Button Content="{Binding IsMonitoring, Converter={x:Static BoolConverters.Not}, ConverterParameter=Start Monitoring, FallbackValue=Stop Monitoring}" 
-                                    Command="{Binding IsMonitoring, Converter={x:Static BoolConverters.Not}, ConverterParameter=StartMonitoringCommand, FallbackValue=StopMonitoringCommand}"
-                                    Background="{Binding IsMonitoring, Converter={x:Static BoolConverters.Not}, ConverterParameter=LightGreen, FallbackValue=#FF4444}"
+                                                <Button Content="{Binding MonitoringButtonText}"
+                            Command="{Binding ToggleMonitoringCommand}"
+                            Background="{Binding MonitoringButtonColor}"
                                     Foreground="Black"
                                     FontWeight="Bold"
                                     FontSize="12"
@@ -319,9 +319,9 @@
                         <TextBlock Text="Network monitoring" 
                                    FontSize="12" 
                                    Foreground="White"/>
-                        <TextBlock Text="{Binding IsMonitoring, Converter={x:Static BoolConverters.Not}, ConverterParameter=Stopped, FallbackValue=Active}" 
+                        <TextBlock Text="{Binding MonitoringStatusText}" 
                                    FontSize="12" 
-                                   Foreground="{Binding IsMonitoring, Converter={x:Static BoolConverters.Not}, ConverterParameter=#FF4444, FallbackValue=#00D4FF}"/>
+                                   Foreground="{Binding MonitoringStatusColor}"/>
                     </StackPanel>
                     
                     <TextBlock Grid.Column="1" 
