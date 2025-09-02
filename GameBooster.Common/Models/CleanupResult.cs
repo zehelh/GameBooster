@@ -66,6 +66,28 @@ public class CleanupResult
     /// Durée de l'opération en secondes
     /// </summary>
     public double DurationSeconds => DurationMs / 1000.0;
+
+    /// <summary>
+    /// Espace libéré formaté (MB/GB)
+    /// </summary>
+    public string SpaceFreedFormatted
+    {
+        get
+        {
+            if (SpaceFreed >= 1024 * 1024 * 1024) // 1 GB
+            {
+                return $"{SpaceFreedGB:F2} GB";
+            }
+            else if (SpaceFreed >= 1024 * 1024) // 1 MB
+            {
+                return $"{SpaceFreedMB:F2} MB";
+            }
+            else
+            {
+                return $"{SpaceFreed} bytes";
+            }
+        }
+    }
 }
 
 /// <summary>
@@ -80,5 +102,7 @@ public enum CleanupType
     WindowsUpdate,
     SystemLogs,
     Memory,
+    FullAnalysis,
+    History,
     Custom
 }

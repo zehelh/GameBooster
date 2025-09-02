@@ -1,0 +1,374 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:models="using:GameBooster.Common.Models"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="GameBooster.UI.Views.CpuView">
+    
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <StackPanel Grid.Row="0" Margin="0,0,0,20">
+                <TextBlock Text="⚡ CPU Management" 
+                           FontSize="24" FontWeight="Bold" 
+                           Foreground="White"
+                           Margin="0,0,0,10"/>
+                <TextBlock Text="Monitor and optimize CPU performance and process priorities" 
+                           FontSize="14" Opacity="0.7" 
+                           Foreground="#CCCCCC"/>
+            </StackPanel>
+
+            <!-- Main Content -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- CPU Information and Processes -->
+                <StackPanel Grid.Column="0" Spacing="20" Margin="0,0,10,0">
+                    
+                    <!-- CPU Information -->
+                    <Border Background="#1A1A2E" 
+                            CornerRadius="8" 
+                            Padding="20"
+                            BorderBrush="#333" 
+                            BorderThickness="1">
+                        <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto">
+                            <!-- CPU Name and Usage -->
+                            <StackPanel Grid.Column="0" Grid.Row="0" Spacing="10">
+                                <TextBlock Text="🖥️ CPU Information" 
+                                           FontSize="16" FontWeight="Bold" 
+                                           Foreground="White"/>
+                                <TextBlock Text="{Binding CpuInfo.Name}" 
+                                           FontSize="12" 
+                                           Foreground="#00D4FF"/>
+                                <TextBlock Text="{Binding CpuInfo.CoresFormatted}" 
+                                           FontSize="12" 
+                                           Foreground="#FFA500"/>
+                            </StackPanel>
+                            
+                            <!-- Current Usage -->
+                            <StackPanel Grid.Column="1" Grid.Row="0" Spacing="10">
+                                <TextBlock Text="📊 Current Usage" 
+                                           FontSize="14" FontWeight="Bold" 
+                                           Foreground="White"/>
+                                <TextBlock Text="{Binding CpuInfo.UsageFormatted}" 
+                                           FontSize="24" FontWeight="Bold" 
+                                           Foreground="LightGreen"/>
+                                <ProgressBar Value="{Binding CpuInfo.UsagePercentage}" 
+                                             Maximum="100" 
+                                             Height="8" 
+                                             Background="#333" 
+                                             Foreground="LightGreen"/>
+                            </StackPanel>
+                            
+                            <!-- Frequency -->
+                            <StackPanel Grid.Column="2" Grid.Row="0" Spacing="10">
+                                <TextBlock Text="⚡ Frequency" 
+                                           FontSize="14" FontWeight="Bold" 
+                                           Foreground="White"/>
+                                <TextBlock Text="{Binding CpuInfo.FrequencyFormatted}" 
+                                           FontSize="16" FontWeight="Bold" 
+                                           Foreground="#FFA500"/>
+                                <TextBlock Text="{Binding CpuInfo.MaxFrequencyFormatted, StringFormat='Max: {0}'}" 
+                                           FontSize="12" 
+                                           Foreground="#666"/>
+                            </StackPanel>
+                            
+                            <!-- Performance Counters -->
+                            <StackPanel Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="3" 
+                                        Orientation="Horizontal" 
+                                        Spacing="20" 
+                                        Margin="0,15,0,0">
+                                <StackPanel Spacing="5">
+                                    <TextBlock Text="Context Switches" 
+                                               FontSize="12" Opacity="0.7"/>
+                                    <TextBlock Text="{Binding PerformanceCounters.ContextSwitchesFormatted}" 
+                                               FontSize="12" 
+                                               Foreground="#00D4FF"/>
+                                </StackPanel>
+                                <StackPanel Spacing="5">
+                                    <TextBlock Text="System Calls" 
+                                               FontSize="12" Opacity="0.7"/>
+                                    <TextBlock Text="{Binding PerformanceCounters.SystemCallsFormatted}" 
+                                               FontSize="12" 
+                                               Foreground="#00D4FF"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- CPU Processes Section -->
+                    <Border Background="#1A1A2E" 
+                            CornerRadius="8" 
+                            Padding="20"
+                            BorderBrush="#333" 
+                            BorderThickness="1">
+                        <Grid RowDefinitions="Auto,Auto,*">
+                            <!-- Header -->
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,15">
+                                <TextBlock Text="📋 CPU Processes" 
+                                           FontSize="18" FontWeight="Bold" 
+                                           Foreground="White"/>
+                                <Button Content="Refresh" 
+                                        Command="{Binding RefreshCommand}"
+                                        Margin="15,0,0,0"
+                                        Padding="10,5"
+                                        Background="#FF6B6B"
+                                        Foreground="White"
+                                        BorderThickness="0"
+                                        CornerRadius="4"/>
+                            </StackPanel>
+
+                            <!-- Filters -->
+                            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,15">
+                                <CheckBox Content="Show Microsoft Processes" 
+                                          IsChecked="{Binding ShowMicrosoftProcesses}"
+                                          Foreground="White"
+                                          Margin="0,0,15,0"/>
+                                <TextBox Text="{Binding ProcessSearchText}"
+                                         Watermark="Search processes..."
+                                         Width="200"
+                                         Background="#2A2A2A"
+                                         Foreground="White"
+                                         BorderBrush="#444444"
+                                         BorderThickness="1"
+                                         CornerRadius="4"
+                                         Padding="8,5"/>
+                            </StackPanel>
+
+                            <!-- Processes List -->
+                            <ScrollViewer Grid.Row="2" 
+                                          MaxHeight="400"
+                                          VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding CpuProcesses}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="models:CpuProcessInfo">
+                                            <Border Background="#0F0F23" 
+                                                    Padding="15" 
+                                                    Margin="0,8" 
+                                                    CornerRadius="6">
+                                                <Grid ColumnDefinitions="*,Auto,Auto,Auto" RowDefinitions="Auto,Auto">
+                                                    <!-- Process Info -->
+                                                    <StackPanel Grid.Column="0" Grid.Row="0">
+                                                        <TextBlock Text="{Binding Name}" 
+                                                                   FontSize="16" FontWeight="Bold" 
+                                                                   Foreground="White"/>
+                                                        <TextBlock Text="{Binding ProcessIdFormatted}" 
+                                                                   FontSize="12" Opacity="0.7"/>
+                                                    </StackPanel>
+                                                    
+                                                    <!-- CPU Usage -->
+                                                    <StackPanel Grid.Column="1" Grid.Row="0" 
+                                                                HorizontalAlignment="Center" 
+                                                                Margin="10,0">
+                                                        <TextBlock Text="{Binding CpuUsageFormatted}" 
+                                                                   FontSize="14" FontWeight="Bold" 
+                                                                   Foreground="LightGreen"/>
+                                                        <TextBlock Text="CPU Usage" 
+                                                                   FontSize="10" Opacity="0.7"/>
+                                                    </StackPanel>
+                                                    
+                                                    <!-- Priority -->
+                                                    <StackPanel Grid.Column="2" Grid.Row="0" 
+                                                                HorizontalAlignment="Center" 
+                                                                Margin="10,0">
+                                                        <Border Background="#333" 
+                                                                Padding="6,3" 
+                                                                CornerRadius="4">
+                                                            <TextBlock Text="{Binding PriorityFormatted}" 
+                                                                       FontSize="10" FontWeight="Bold" 
+                                                                       Foreground="#00D4FF"/>
+                                                        </Border>
+                                                    </StackPanel>
+                                                    
+                                                    <!-- Affinity -->
+                                                    <StackPanel Grid.Column="3" Grid.Row="0" 
+                                                                HorizontalAlignment="Right">
+                                                        <TextBlock Text="{Binding AffinityFormatted}" 
+                                                                   FontSize="10" 
+                                                                   Foreground="#FFA500"/>
+                                                        <TextBlock Text="Affinity" 
+                                                                   FontSize="10" Opacity="0.7"/>
+                                                    </StackPanel>
+                                                    
+                                                    <!-- Actions -->
+                                                    <StackPanel Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="4" 
+                                                                Orientation="Horizontal" 
+                                                                Spacing="5" 
+                                                                HorizontalAlignment="Right" 
+                                                                Margin="0,10,0,0">
+                                                        <Button Content="Set Priority" 
+                                                                Command="{Binding DataContext.SetPriorityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}"
+                                                                Background="#333" 
+                                                                Foreground="White"
+                                                                FontSize="10"
+                                                                Padding="8,4"
+                                                                CornerRadius="4"/>
+                                                        <Button Content="Set Affinity" 
+                                                                Command="{Binding DataContext.SetAffinityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}"
+                                                                Background="#333" 
+                                                                Foreground="White"
+                                                                FontSize="10"
+                                                                Padding="8,4"
+                                                                CornerRadius="4"/>
+                                                        <Button Content="Set Limit" 
+                                                                Command="{Binding DataContext.SetCpuLimitCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}"
+                                                                Background="#FFA500" 
+                                                                Foreground="Black"
+                                                                FontSize="10"
+                                                                Padding="8,4"
+                                                                CornerRadius="4"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <!-- Control Panel -->
+                <Border Grid.Column="1" 
+                        Width="250"
+                        Background="#1A1A2E" 
+                        CornerRadius="8" 
+                        Padding="20"
+                        BorderBrush="#333" 
+                        BorderThickness="1">
+                    <StackPanel Spacing="15">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="⚙️" FontSize="20"/>
+                            <TextBlock Text="CPU Control" 
+                                       FontSize="16" FontWeight="Bold" 
+                                       Foreground="White"/>
+                        </StackPanel>
+                        
+                        <TextBlock Text="Manage CPU performance and process priorities" 
+                                   FontSize="12" Opacity="0.7"/>
+                        
+                        <Separator Margin="0,10"/>
+                        
+                        <StackPanel Spacing="10">
+                            <Button Content="🔄 Refresh" 
+                                    Command="{Binding RefreshCommand}"
+                                    Background="#333" 
+                                    Foreground="White"
+                                    FontSize="12"
+                                    Padding="12,8"
+                                    CornerRadius="6"
+                                    HorizontalAlignment="Stretch"/>
+                            
+                            <Button Content="▶️ Start Monitoring" 
+                                    Command="{Binding StartMonitoringCommand}"
+                                    Background="#4CAF50" 
+                                    Foreground="White"
+                                    FontSize="12"
+                                    Padding="12,8"
+                                    CornerRadius="6"
+                                    HorizontalAlignment="Stretch"
+                                    IsVisible="{Binding !IsMonitoring}"/>
+                            
+                            <Button Content="⏸️ Stop Monitoring" 
+                                    Command="{Binding StopMonitoringCommand}"
+                                    Background="#FFA500" 
+                                    Foreground="Black"
+                                    FontSize="12"
+                                    Padding="12,8"
+                                    CornerRadius="6"
+                                    HorizontalAlignment="Stretch"
+                                    IsVisible="{Binding IsMonitoring}"/>
+                        </StackPanel>
+                        
+                        <Separator Margin="0,10"/>
+                        
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="🎮 Gaming Profile" 
+                                       FontSize="14" FontWeight="Bold" 
+                                       Foreground="White"/>
+                            <Button Content="Apply Gaming Profile" 
+                                    Command="{Binding ApplyGamingProfileCommand}"
+                                    Background="#9C27B0" 
+                                    Foreground="White"
+                                    FontSize="12"
+                                    Padding="12,8"
+                                    CornerRadius="6"
+                                    HorizontalAlignment="Stretch"/>
+                        </StackPanel>
+                        
+                        <Separator Margin="0,10"/>
+                        
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="🔄 Reset Options" 
+                                       FontSize="14" FontWeight="Bold" 
+                                       Foreground="White"/>
+                            <Button Content="Reset All Optimizations" 
+                                    Command="{Binding ResetOptimizationsCommand}"
+                                    Background="#FF4444" 
+                                    Foreground="White"
+                                    FontSize="12"
+                                    Padding="12,8"
+                                    CornerRadius="6"
+                                    HorizontalAlignment="Stretch"/>
+                        </StackPanel>
+                        
+                        <Separator Margin="0,10"/>
+                        
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="📊 Statistics" 
+                                       FontSize="14" FontWeight="Bold" 
+                                       Foreground="White"/>
+                            <TextBlock Text="{Binding CpuProcesses.Count, StringFormat='Active processes: {0}'}" 
+                                       FontSize="12" 
+                                       Foreground="#00D4FF"/>
+                            <TextBlock Text="{Binding CpuInfo.LogicalCores, StringFormat='CPU cores: {0}'}" 
+                                       FontSize="12" 
+                                       Foreground="LightGreen"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Status Bar -->
+            <Border Grid.Row="2" 
+                    Background="#1A1A2E" 
+                    CornerRadius="6" 
+                    Margin="0,10,0,0" 
+                    Padding="15,10"
+                    BorderBrush="#333" 
+                    BorderThickness="1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <TextBlock Grid.Column="0" 
+                               Text="⚡ CPU management ready" 
+                               FontSize="12" 
+                               Foreground="White"
+                               VerticalAlignment="Center"/>
+                    
+                    <ProgressBar Grid.Column="1" 
+                                 IsIndeterminate="True" 
+                                 Width="100" Height="4"
+                                 IsVisible="{Binding IsLoading}"/>
+                </Grid>
+            </Border>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

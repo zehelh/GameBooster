@@ -6,12 +6,13 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
              x:Class="GameBooster.UI.Views.SchedulerView">
     
-    <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
         <!-- Header -->
         <StackPanel Grid.Row="0" Margin="0,0,0,20">
@@ -98,7 +99,7 @@
                                                     <StackPanel Grid.Column="0" Spacing="5">
                                                         <TextBlock Text="Schedule" 
                                                                    FontSize="12" Opacity="0.7"/>
-                                                        <TextBlock Text="{Binding Schedule, StringFormat='{}{0}'}" 
+                                                        <TextBlock Text="{Binding Schedule}" 
                                                                    FontSize="12" 
                                                                    Foreground="#FFA500"/>
                                                     </StackPanel>
@@ -108,12 +109,16 @@
                                                                 Orientation="Horizontal" 
                                                                 Spacing="5">
                                                         <Button Content="Edit" 
+                                                                Command="{Binding DataContext.EditTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}"
                                                                 Background="#333" 
                                                                 Foreground="White"
                                                                 FontSize="10"
                                                                 Padding="8,4"
                                                                 CornerRadius="4"/>
                                                         <Button Content="Delete" 
+                                                                Command="{Binding DataContext.DeleteTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}"
                                                                 Background="#FF4444" 
                                                                 Foreground="White"
                                                                 FontSize="10"
@@ -128,22 +133,23 @@
                             </ItemsControl>
                         </ScrollViewer>
                         
-                                                 <!-- Empty State -->
-                         <Border Background="#0F0F23" 
-                                 Padding="40" 
-                                 CornerRadius="6">
-                             <StackPanel HorizontalAlignment="Center" Spacing="10">
-                                 <TextBlock Text="📝" FontSize="48" HorizontalAlignment="Center"/>
-                                 <TextBlock Text="No scheduled tasks" 
-                                            FontSize="16" FontWeight="Bold" 
-                                            Foreground="White"
-                                            HorizontalAlignment="Center"/>
-                                 <TextBlock Text="Create your first scheduled task to automate system optimization" 
-                                            FontSize="12" Opacity="0.7" 
-                                            HorizontalAlignment="Center"
-                                            TextWrapping="Wrap"/>
-                             </StackPanel>
-                         </Border>
+                        <!-- Empty State -->
+                        <Border Background="#0F0F23" 
+                                Padding="40" 
+                                CornerRadius="6"
+                                IsVisible="{Binding !HasTasks}">
+                            <StackPanel HorizontalAlignment="Center" Spacing="10">
+                                <TextBlock Text="📝" FontSize="48" HorizontalAlignment="Center"/>
+                                <TextBlock Text="No scheduled tasks" 
+                                           FontSize="16" FontWeight="Bold" 
+                                           Foreground="White"
+                                           HorizontalAlignment="Center"/>
+                                <TextBlock Text="Create your first scheduled task to automate system optimization" 
+                                           FontSize="12" Opacity="0.7" 
+                                           HorizontalAlignment="Center"
+                                           TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </Border>
 
@@ -386,7 +392,7 @@
                 </Grid.ColumnDefinitions>
                 
                 <TextBlock Grid.Column="0" 
-                           Text="⏰ Task scheduler ready" 
+                           Text="{Binding StatusMessage}" 
                            FontSize="12" 
                            Foreground="White"
                            VerticalAlignment="Center"/>
@@ -397,5 +403,6 @@
                              IsVisible="{Binding IsLoading}"/>
             </Grid>
         </Border>
-    </Grid>
-</UserControl>
+                </Grid>
+        </ScrollViewer>
+    </UserControl>

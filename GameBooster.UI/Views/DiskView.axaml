@@ -6,15 +6,16 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
              x:Class="GameBooster.UI.Views.DiskView">
     
-    <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+            <!-- Header -->
+            <StackPanel Grid.Row="0" Margin="0,0,0,20">
             <TextBlock Text="💾 Disk Management" 
                        FontSize="24" FontWeight="Bold" 
                        Foreground="White"
@@ -69,7 +70,7 @@
                                                 <!-- Disk Size -->
                                                 <StackPanel Grid.Column="1" Grid.Row="0" 
                                                             HorizontalAlignment="Right">
-                                                    <TextBlock Text="{Binding TotalSize, StringFormat='{}{0:F1} GB'}" 
+                                                    <TextBlock Text="{Binding TotalSizeGB, StringFormat='{}{0:F1} GB'}" 
                                                                FontSize="14" FontWeight="Bold" 
                                                                Foreground="White"/>
                                                     <TextBlock Text="Total size" 
@@ -85,7 +86,7 @@
                                                             <TextBlock Grid.Column="0" Text="Used space" 
                                                                        FontSize="12" Opacity="0.7"/>
                                                             <TextBlock Grid.Column="1" 
-                                                                       Text="{Binding UsedSpace, StringFormat='{}{0:F1} GB'}" 
+                                                                       Text="{Binding UsedSpaceGB, StringFormat='{}{0:F1} GB'}" 
                                                                        FontSize="12" 
                                                                        Foreground="#FFA500"/>
                                                         </Grid>
@@ -99,7 +100,7 @@
                                                     <StackPanel Grid.Column="1" 
                                                                 HorizontalAlignment="Right" 
                                                                 Margin="10,0,0,0">
-                                                        <TextBlock Text="{Binding FreeSpace, StringFormat='{}{0:F1} GB'}" 
+                                                        <TextBlock Text="{Binding FreeSpaceGB, StringFormat='{}{0:F1} GB'}" 
                                                                    FontSize="14" FontWeight="Bold" 
                                                                    Foreground="LightGreen"/>
                                                         <TextBlock Text="Free" 
@@ -284,7 +285,7 @@
                         Padding="20"
                         BorderBrush="#333" 
                         BorderThickness="1"
-                        IsVisible="{Binding LastCleanupResult, Converter={x:Static ObjectConverters.IsNotNull}}">
+                        IsVisible="{Binding HasLastCleanupResult}">
                     <StackPanel Spacing="10">
                         <TextBlock Text="📋 Last Result" 
                                    FontSize="16" FontWeight="Bold" 
@@ -330,6 +331,7 @@
                                 HorizontalAlignment="Stretch"/>
                         
                         <Button Content="📊 Full Analysis" 
+                                Command="{Binding FullAnalysisCommand}"
                                 Background="#333" 
                                 Foreground="White"
                                 FontSize="12"
@@ -338,6 +340,7 @@
                                 HorizontalAlignment="Stretch"/>
                         
                         <Button Content="📋 History" 
+                                Command="{Binding HistoryCommand}"
                                 Background="#333" 
                                 Foreground="White"
                                 FontSize="12"
@@ -392,5 +395,6 @@
                              IsVisible="{Binding IsCleaning}"/>
             </Grid>
         </Border>
-    </Grid>
-</UserControl>
+                </Grid>
+        </ScrollViewer>
+    </UserControl>

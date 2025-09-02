@@ -489,7 +489,7 @@ public class WindowsServiceManager : IWindowsServiceManager
     /// </summary>
     public async Task<List<StartupProgram>> GetStartupProgramsAsync()
     {
-        return await Task.Run(() =>
+        return await Task.Run(async () =>
         {
             try
             {
@@ -519,44 +519,32 @@ public class WindowsServiceManager : IWindowsServiceManager
                                 var value = key.GetValue(valueName);
                                 if (value != null)
                                 {
-                                    var program = new StartupProgram
-                                    {
-                                        Name = valueName,
-                                        Description = valueName,
-                                        ExecutablePath = value.ToString() ?? "",
-                                        RegistryPath = registryPath,
-                                        IsEnabled = true,
-                                        StartupType = "Registry",
-                                        LastModified = DateTime.Now
-                                    };
-
-                                    // Try to get file info
-                                    if (!string.IsNullOrEmpty(program.ExecutablePath) && File.Exists(program.ExecutablePath))
-                                    {
-                                        var fileInfo = new FileInfo(program.ExecutablePath);
-                                        program.FileSize = fileInfo.Length;
-                                        program.LastModified = fileInfo.LastWriteTime;
-                                    }
-
-                                    startupPrograms.Add(program);
+                                                                         startupPrograms.Add(new StartupProgram
+                                     {
+                                         Name = valueName,
+                                         ExecutablePath = value.ToString() ?? "",
+                                         IsEnabled = true,
+                                         RegistryPath = registryPath,
+                                         LastModified = DateTime.Now
+                                     });
                                 }
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError($"Error reading registry path {registryPath}: {ex.Message}");
+                        _logger.LogWarning($"Error reading registry path {registryPath}: {ex.Message}");
                     }
                 }
 
-                // Also check HKCU (Current User)
-                var hkcuPaths = new[]
+                // Also check HKEY_CURRENT_USER
+                var userRegistryPaths = new[]
                 {
                     @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
                     @"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce"
                 };
 
-                foreach (var registryPath in hkcuPaths)
+                foreach (var registryPath in userRegistryPaths)
                 {
                     try
                     {
@@ -568,36 +556,102 @@ public class WindowsServiceManager : IWindowsServiceManager
                                 var value = key.GetValue(valueName);
                                 if (value != null)
                                 {
-                                    var program = new StartupProgram
-                                    {
-                                        Name = valueName,
-                                        Description = valueName,
-                                        ExecutablePath = value.ToString() ?? "",
-                                        RegistryPath = $"HKCU\\{registryPath}",
-                                        IsEnabled = true,
-                                        StartupType = "Registry (User)",
-                                        LastModified = DateTime.Now
-                                    };
-
-                                    if (!string.IsNullOrEmpty(program.ExecutablePath) && File.Exists(program.ExecutablePath))
-                                    {
-                                        var fileInfo = new FileInfo(program.ExecutablePath);
-                                        program.FileSize = fileInfo.Length;
-                                        program.LastModified = fileInfo.LastWriteTime;
-                                    }
-
-                                    startupPrograms.Add(program);
+                                                                         startupPrograms.Add(new StartupProgram
+                                     {
+                                         Name = valueName,
+                                         ExecutablePath = value.ToString() ?? "",
+                                         IsEnabled = true,
+                                         RegistryPath = $"HKCU\\{registryPath}",
+                                         LastModified = DateTime.Now
+                                     });
                                 }
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError($"Error reading HKCU registry path {registryPath}: {ex.Message}");
+                        _logger.LogWarning($"Error reading user registry path {registryPath}: {ex.Message}");
                     }
                 }
 
-                _logger.LogInformation($"Retrieved {startupPrograms.Count} startup programs");
+                // Get disabled startup programs from Task Manager
+                try
+                {
+                    var disabledScript = @"
+                        $ErrorActionPreference = 'Stop'
+                        try {
+                            $disabled = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run' -ErrorAction SilentlyContinue
+                            $disabled32 = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run32' -ErrorAction SilentlyContinue
+                            
+                            $result = @()
+                            
+                            if ($disabled) {
+                                foreach ($prop in $disabled.PSObject.Properties) {
+                                    if ($prop.Name -notin @('PSPath', 'PSParentPath', 'PSChildName', 'PSProvider', 'PSDrive')) {
+                                                                                 $result += @{
+                                             Name = $prop.Name
+                                             ExecutablePath = 'Disabled (Run)'
+                                             IsEnabled = $false
+                                             RegistryPath = 'HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run'
+                                         }
+                                    }
+                                }
+                            }
+                            
+                            if ($disabled32) {
+                                foreach ($prop in $disabled32.PSObject.Properties) {
+                                    if ($prop.Name -notin @('PSPath', 'PSParentPath', 'PSChildName', 'PSProvider', 'PSDrive')) {
+                                                                                 $result += @{
+                                             Name = $prop.Name
+                                             ExecutablePath = 'Disabled (Run32)'
+                                             IsEnabled = $false
+                                             RegistryPath = 'HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run32'
+                                         }
+                                    }
+                                }
+                            }
+                            
+                            ConvertTo-Json -Compress $result
+                        }
+                        catch {
+                            Write-Error $_.Exception.Message
+                            exit 1
+                        }
+                    ";
+
+                                         var disabledResult = await ExecutePowerShellScriptAsync(disabledScript);
+                    if (disabledResult.Success && !string.IsNullOrEmpty(disabledResult.Output))
+                    {
+                        try
+                        {
+                            var disabledPrograms = System.Text.Json.JsonSerializer.Deserialize<List<dynamic>>(disabledResult.Output);
+                            if (disabledPrograms != null)
+                            {
+                                foreach (var program in disabledPrograms)
+                                {
+                                    startupPrograms.Add(new StartupProgram
+                                    {
+                                                                                 Name = program.GetProperty("Name").GetString() ?? "",
+                                         ExecutablePath = program.GetProperty("ExecutablePath").GetString() ?? "",
+                                         IsEnabled = false,
+                                         RegistryPath = program.GetProperty("RegistryPath").GetString() ?? "",
+                                        LastModified = DateTime.Now
+                                    });
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning($"Error parsing disabled startup programs: {ex.Message}");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning($"Error getting disabled startup programs: {ex.Message}");
+                }
+
+                _logger.LogInformation($"Found {startupPrograms.Count} startup programs");
                 return startupPrograms;
             }
             catch (Exception ex)
@@ -657,6 +711,36 @@ public class WindowsServiceManager : IWindowsServiceManager
         catch (Exception ex)
         {
             _logger.LogError($"Error setting startup program {name} status: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Execute PowerShell command and return result
+    /// </summary>
+    private bool ExecutePowerShellCommand(string command)
+    {
+        try
+        {
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command \"{command}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using var process = new Process { StartInfo = startInfo };
+            process.Start();
+            process.WaitForExit();
+            
+            return process.ExitCode == 0;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error executing PowerShell command: {ex.Message}");
             return false;
         }
     }
@@ -730,5 +814,185 @@ public class WindowsServiceManager : IWindowsServiceManager
             "disabled" => ServiceStartType.Disabled,
             _ => ServiceStartType.Manual
         };
+    }
+
+    /// <summary>
+    /// Toggle Windows Defender real-time protection
+    /// </summary>
+    public async Task<bool> ToggleDefenderRealTimeProtectionAsync()
+    {
+        try
+        {
+            _logger.LogInformation("Toggling Windows Defender real-time protection");
+
+            var script = @"
+                $ErrorActionPreference = 'Stop'
+                try {
+                    # Check if we have admin rights
+                    $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')
+                    if (-not $isAdmin) {
+                        Write-Error 'Administrator privileges required'
+                        exit 1
+                    }
+
+                    # Get current status
+                    $status = Get-MpComputerStatus
+                    $currentState = $status.RealTimeProtectionEnabled
+                    
+                    # Toggle the state
+                    if ($currentState) {
+                        Set-MpPreference -DisableRealtimeMonitoring $true
+                        Write-Output 'Real-time protection disabled'
+                    } else {
+                        Set-MpPreference -DisableRealtimeMonitoring $false
+                        Write-Output 'Real-time protection enabled'
+                    }
+                    
+                    exit 0
+                }
+                catch {
+                    Write-Error $_.Exception.Message
+                    exit 1
+                }
+            ";
+
+            var result = await ExecutePowerShellScriptAsync(script);
+            var success = result.Success;
+            _logger.LogInformation($"Real-time protection toggle result: {(success ? "Success" : "Failed")}");
+            return success;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error toggling real-time protection: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Toggle Windows Defender cloud protection
+    /// </summary>
+    public async Task<bool> ToggleDefenderCloudProtectionAsync()
+    {
+        try
+        {
+            _logger.LogInformation("Toggling Windows Defender cloud protection");
+
+            if (!await IsElevatedAsync())
+            {
+                _logger.LogError("Administrator privileges required to modify Windows Defender settings");
+                return false;
+            }
+
+            var script = @"
+                $ErrorActionPreference = 'Stop'
+                try {
+                    # Get current status
+                    $prefs = Get-MpPreference
+                    $currentState = $prefs.MAPSReporting
+                    
+                    # Toggle the state
+                    if ($currentState -eq 'Disabled') {
+                        Set-MpPreference -MAPSReporting Advanced
+                        Write-Output 'Cloud protection enabled'
+                    } else {
+                        Set-MpPreference -MAPSReporting Disabled
+                        Write-Output 'Cloud protection disabled'
+                    }
+                    
+                    exit 0
+                }
+                catch {
+                    Write-Error $_.Exception.Message
+                    exit 1
+                }
+            ";
+
+            var result = await ExecutePowerShellScriptAsync(script);
+            var success = result.Success;
+            _logger.LogInformation($"Cloud protection toggle result: {(success ? "Success" : "Failed")} - {result.Output}");
+            return success;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error toggling cloud protection: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Toggle Windows Defender tamper protection
+    /// </summary>
+    public async Task<bool> ToggleDefenderTamperProtectionAsync()
+    {
+        try
+        {
+            _logger.LogInformation("Toggling Windows Defender tamper protection");
+
+            if (!await IsElevatedAsync())
+            {
+                _logger.LogError("Administrator privileges required to modify Windows Defender settings");
+                return false;
+            }
+
+            var script = @"
+                $ErrorActionPreference = 'Stop'
+                try {
+                    # Get current status
+                    $status = Get-MpComputerStatus
+                    $currentState = $status.IsTamperProtected
+                    
+                    # Toggle the state
+                    if ($currentState) {
+                        Set-MpPreference -DisableTamperProtection $true
+                        Write-Output 'Tamper protection disabled'
+                    } else {
+                        Set-MpPreference -DisableTamperProtection $false
+                        Write-Output 'Tamper protection enabled'
+                    }
+                    
+                    exit 0
+                }
+                catch {
+                    Write-Error $_.Exception.Message
+                    exit 1
+                }
+            ";
+
+            var result = await ExecutePowerShellScriptAsync(script);
+            var success = result.Success;
+            _logger.LogInformation($"Tamper protection toggle result: {(success ? "Success" : "Failed")} - {result.Output}");
+            return success;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error toggling tamper protection: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Toggle Windows Defender sample submission
+    /// </summary>
+    public async Task<bool> ToggleDefenderSampleSubmissionAsync()
+    {
+        return await Task.Run(() =>
+        {
+            try
+            {
+                _logger.LogInformation("Toggling Windows Defender sample submission");
+                
+                // PowerShell command to toggle sample submission
+                var command = "Set-MpPreference -SubmitSamplesConsent NeverSend";
+                var result = ExecutePowerShellCommand(command);
+                
+                _logger.LogInformation("Windows Defender sample submission toggled successfully");
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error toggling sample submission: {ex.Message}");
+                return false;
+            }
+        });
     }
 }

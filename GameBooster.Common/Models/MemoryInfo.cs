@@ -23,9 +23,22 @@ public class MemoryInfo
     public long UsedPhysical => TotalPhysical - AvailablePhysical;
 
     /// <summary>
-    /// Pourcentage d'utilisation de la mémoire physique
+    /// Pourcentage d'utilisation de la mémoire physique (corrigé pour être cohérent avec le Gestionnaire des tâches)
     /// </summary>
-    public double UsagePercentage => TotalPhysical > 0 ? (UsedPhysical * 100.0) / TotalPhysical : 0;
+    public double UsagePercentage 
+    { 
+        get 
+        {
+            if (TotalPhysical <= 0) return 0.0;
+            
+            // Calcul cohérent avec le Gestionnaire des tâches Windows
+            var used = TotalPhysical - AvailablePhysical;
+            var percentage = (used * 100.0) / TotalPhysical;
+            
+            // Limiter à 100% maximum pour éviter les valeurs aberrantes
+            return Math.Min(percentage, 100.0);
+        }
+    }
 
     /// <summary>
     /// Mémoire virtuelle totale en bytes
@@ -111,4 +124,24 @@ public class MemoryInfo
     /// Mémoire physique utilisée en GB
     /// </summary>
     public double UsedPhysicalGB => BytesToGB(UsedPhysical);
+
+    /// <summary>
+    /// Pourcentage d'utilisation formaté
+    /// </summary>
+    public string UsagePercentageFormatted => $"{UsagePercentage:F1}%";
+
+    /// <summary>
+    /// Mémoire utilisée formatée en GB
+    /// </summary>
+    public string UsedPhysicalGBFormatted => $"{UsedPhysicalGB:F1} GB";
+
+    /// <summary>
+    /// Mémoire totale formatée en GB
+    /// </summary>
+    public string TotalPhysicalGBFormatted => $"{TotalPhysicalGB:F1} GB";
+
+    /// <summary>
+    /// Mémoire disponible formatée en GB
+    /// </summary>
+    public string AvailablePhysicalGBFormatted => $"{AvailablePhysicalGB:F1} GB";
 }

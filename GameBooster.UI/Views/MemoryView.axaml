@@ -207,7 +207,7 @@
                         Padding="20"
                         BorderBrush="#333" 
                         BorderThickness="1"
-                        IsVisible="{Binding LastCleanupResult, Converter={x:Static ObjectConverters.IsNotNull}}">
+                        IsVisible="{Binding HasLastCleanupResult}">
                     <StackPanel Spacing="15">
                         <TextBlock Text="📋 Last Cleanup Results" 
                                    FontSize="16" FontWeight="Bold" 
@@ -343,7 +343,7 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         
-                                        <TextBlock Grid.Column="0" Text="{Binding ProcessName}" FontSize="12" Foreground="White"/>
+                                        <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="12" Foreground="White"/>
                                         <TextBlock Grid.Column="1" Text="{Binding MemoryUsageMB}" FontSize="12" Foreground="#00D4FF"/>
                                     </Grid>
                                 </Border>

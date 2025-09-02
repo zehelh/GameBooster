@@ -71,4 +71,24 @@ public interface IWindowsServiceManager
     /// Enable/disable startup program
     /// </summary>
     Task<bool> SetStartupProgramStatusAsync(string name, bool enabled);
+
+    /// <summary>
+    /// Toggle Windows Defender real-time protection
+    /// </summary>
+    Task<bool> ToggleDefenderRealTimeProtectionAsync();
+
+    /// <summary>
+    /// Toggle Windows Defender cloud protection
+    /// </summary>
+    Task<bool> ToggleDefenderCloudProtectionAsync();
+
+    /// <summary>
+    /// Toggle Windows Defender tamper protection
+    /// </summary>
+    Task<bool> ToggleDefenderTamperProtectionAsync();
+
+    /// <summary>
+    /// Toggle Windows Defender sample submission
+    /// </summary>
+    Task<bool> ToggleDefenderSampleSubmissionAsync();
 }

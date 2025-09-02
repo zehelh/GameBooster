@@ -70,4 +70,10 @@ public class DefenderStatus
     
     public string ProtectionButtonText => IsProtected ? "Disable Protection" : "Enable Protection";
     public string ProtectionButtonColor => IsProtected ? "#FF4444" : "LightGreen";
+
+    // Descriptions for each protection feature
+    public string RealTimeProtectionDescription => "Monitors files and programs in real-time to detect and block threats as they occur.";
+    public string CloudProtectionDescription => "Sends suspicious files to Microsoft for analysis and receives threat intelligence updates.";
+    public string TamperProtectionDescription => "Prevents unauthorized changes to Windows Defender settings and other security features.";
+    public string SampleSubmissionDescription => "Automatically sends sample files to Microsoft to help improve threat detection.";
 }

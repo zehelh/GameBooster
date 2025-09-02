@@ -5,11 +5,11 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
              x:Class="GameBooster.UI.Views.ServicesView">
     
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <Grid Margin="20">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
@@ -52,7 +52,7 @@
                         
                         <!-- Defender Status -->
                         <Border Background="#0F0F23" CornerRadius="6" Padding="15"
-                                IsVisible="{Binding DefenderStatus, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                IsVisible="{Binding HasDefenderStatus}">
                             <StackPanel Spacing="10">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <StackPanel Grid.Column="0">
@@ -69,39 +69,71 @@
                                 </Grid>
                                 
                                 <!-- Protection Details -->
-                                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
-                                    <Border Grid.Column="0" Grid.Row="0" Background="#1A1A2E" CornerRadius="4" Padding="8" Margin="2">
-                                        <StackPanel>
-                                            <TextBlock Text="Real-time Protection" FontSize="10" Opacity="0.7"/>
-                                            <TextBlock Text="{Binding DefenderStatus.RealTimeProtectionText}" 
-                                                       FontSize="11" Foreground="{Binding DefenderStatus.RealTimeProtectionColor}"/>
-                                        </StackPanel>
+                                <StackPanel Spacing="8">
+                                    <!-- Real-time Protection -->
+                                    <Border Background="#1A1A2E" CornerRadius="4" Padding="10" Margin="2">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Real-time Protection" FontSize="11" FontWeight="Bold" Foreground="White"/>
+                                                <TextBlock Text="{Binding DefenderStatus.RealTimeProtectionDescription}" 
+                                                           FontSize="10" Opacity="0.7" TextWrapping="Wrap"/>
+                                                <TextBlock Text="{Binding DefenderStatus.RealTimeProtectionText}" 
+                                                           FontSize="10" Foreground="{Binding DefenderStatus.RealTimeProtectionColor}"/>
+                                            </StackPanel>
+                                            <Button Grid.Column="1" Content="Toggle" 
+                                                    Command="{Binding ToggleRealTimeProtectionCommand}"
+                                                    Background="#333" Foreground="White" FontSize="10" Padding="8,4" CornerRadius="4"/>
+                                        </Grid>
                                     </Border>
                                     
-                                    <Border Grid.Column="1" Grid.Row="0" Background="#1A1A2E" CornerRadius="4" Padding="8" Margin="2">
-                                        <StackPanel>
-                                            <TextBlock Text="Cloud Protection" FontSize="10" Opacity="0.7"/>
-                                            <TextBlock Text="{Binding DefenderStatus.CloudProtectionText}" 
-                                                       FontSize="11" Foreground="{Binding DefenderStatus.CloudProtectionColor}"/>
-                                        </StackPanel>
+                                    <!-- Cloud Protection -->
+                                    <Border Background="#1A1A2E" CornerRadius="4" Padding="10" Margin="2">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Cloud Protection" FontSize="11" FontWeight="Bold" Foreground="White"/>
+                                                <TextBlock Text="{Binding DefenderStatus.CloudProtectionDescription}" 
+                                                           FontSize="10" Opacity="0.7" TextWrapping="Wrap"/>
+                                                <TextBlock Text="{Binding DefenderStatus.CloudProtectionText}" 
+                                                           FontSize="10" Foreground="{Binding DefenderStatus.CloudProtectionColor}"/>
+                                            </StackPanel>
+                                            <Button Grid.Column="1" Content="Toggle" 
+                                                    Command="{Binding ToggleCloudProtectionCommand}"
+                                                    Background="#333" Foreground="White" FontSize="10" Padding="8,4" CornerRadius="4"/>
+                                        </Grid>
                                     </Border>
                                     
-                                    <Border Grid.Column="0" Grid.Row="1" Background="#1A1A2E" CornerRadius="4" Padding="8" Margin="2">
-                                        <StackPanel>
-                                            <TextBlock Text="Tamper Protection" FontSize="10" Opacity="0.7"/>
-                                            <TextBlock Text="{Binding DefenderStatus.TamperProtectionText}" 
-                                                       FontSize="11" Foreground="{Binding DefenderStatus.TamperProtectionColor}"/>
-                                        </StackPanel>
+                                    <!-- Tamper Protection -->
+                                    <Border Background="#1A1A2E" CornerRadius="4" Padding="10" Margin="2">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Tamper Protection" FontSize="11" FontWeight="Bold" Foreground="White"/>
+                                                <TextBlock Text="{Binding DefenderStatus.TamperProtectionDescription}" 
+                                                           FontSize="10" Opacity="0.7" TextWrapping="Wrap"/>
+                                                <TextBlock Text="{Binding DefenderStatus.TamperProtectionText}" 
+                                                           FontSize="10" Foreground="{Binding DefenderStatus.TamperProtectionColor}"/>
+                                            </StackPanel>
+                                            <Button Grid.Column="1" Content="Toggle" 
+                                                    Command="{Binding ToggleTamperProtectionCommand}"
+                                                    Background="#333" Foreground="White" FontSize="10" Padding="8,4" CornerRadius="4"/>
+                                        </Grid>
                                     </Border>
                                     
-                                    <Border Grid.Column="1" Grid.Row="1" Background="#1A1A2E" CornerRadius="4" Padding="8" Margin="2">
-                                        <StackPanel>
-                                            <TextBlock Text="Sample Submission" FontSize="10" Opacity="0.7"/>
-                                            <TextBlock Text="{Binding DefenderStatus.AutomaticSampleSubmissionText}" 
-                                                       FontSize="11" Foreground="{Binding DefenderStatus.AutomaticSampleSubmissionColor}"/>
-                                        </StackPanel>
+                                    <!-- Sample Submission -->
+                                    <Border Background="#1A1A2E" CornerRadius="4" Padding="10" Margin="2">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Sample Submission" FontSize="11" FontWeight="Bold" Foreground="White"/>
+                                                <TextBlock Text="{Binding DefenderStatus.SampleSubmissionDescription}" 
+                                                           FontSize="10" Opacity="0.7" TextWrapping="Wrap"/>
+                                                <TextBlock Text="{Binding DefenderStatus.AutomaticSampleSubmissionText}" 
+                                                           FontSize="10" Foreground="{Binding DefenderStatus.AutomaticSampleSubmissionColor}"/>
+                                            </StackPanel>
+                                            <Button Grid.Column="1" Content="Toggle" 
+                                                    Command="{Binding ToggleSampleSubmissionCommand}"
+                                                    Background="#333" Foreground="White" FontSize="10" Padding="8,4" CornerRadius="4"/>
+                                        </Grid>
                                     </Border>
-                                </Grid>
+                                </StackPanel>
                             </StackPanel>
                         </Border>
                         
@@ -250,9 +282,15 @@
                                FontSize="12" Opacity="0.7"/>
                     
                     <!-- Startup Programs List -->
-                    <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto">
-                        <ItemsControl ItemsSource="{Binding StartupPrograms}">
-                            <ItemsControl.ItemTemplate>
+                    <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Spacing="10">
+                            <!-- Enabled Programs -->
+                            <StackPanel Spacing="5">
+                                <TextBlock Text="✅ Enabled Programs" 
+                                           FontSize="12" FontWeight="Bold" 
+                                           Foreground="LightGreen"/>
+                                <ItemsControl ItemsSource="{Binding EnabledStartupPrograms}">
+                                    <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border Background="#0F0F23" 
                                             Padding="12" 
@@ -295,8 +333,63 @@
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                            
+                            <!-- Disabled Programs -->
+                            <StackPanel Spacing="5">
+                            <TextBlock Text="❌ Disabled Programs" 
+                                       FontSize="12" FontWeight="Bold" 
+                                       Foreground="#FF4444"/>
+                            <ItemsControl ItemsSource="{Binding DisabledStartupPrograms}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#0F0F23" 
+                                                Padding="12" 
+                                                Margin="0,4" 
+                                                CornerRadius="6">
+                                            <Grid ColumnDefinitions="*,Auto,Auto">
+                                                <StackPanel Grid.Column="0">
+                                                    <TextBlock Text="{Binding Name}" 
+                                                               FontSize="12" 
+                                                               FontWeight="Bold"
+                                                               Foreground="White"/>
+                                                    <TextBlock Text="{Binding ExecutablePath}" 
+                                                               FontSize="10" 
+                                                               Foreground="#AAAAAA"
+                                                               TextWrapping="Wrap"/>
+                                                    <TextBlock Text="{Binding StartupType}" 
+                                                               FontSize="10" 
+                                                               Foreground="#666"/>
+                                                </StackPanel>
+                                                
+                                                <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                                                    <TextBlock Text="{Binding FileSizeFormatted}" 
+                                                               FontSize="10" 
+                                                               Foreground="#AAAAAA"/>
+                                                    <TextBlock Text="{Binding StatusText}" 
+                                                               FontSize="10" 
+                                                               Foreground="{Binding StatusColor}"/>
+                                                </StackPanel>
+                                                
+                                                <Button Grid.Column="2" 
+                                                        Content="{Binding ToggleButtonText}" 
+                                                        Command="{Binding DataContext.ToggleStartupProgramCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Background="{Binding ToggleButtonColor}"
+                                                        Foreground="Black"
+                                                        FontSize="10"
+                                                        Padding="12,6"
+                                                        CornerRadius="4"
+                                                        HorizontalAlignment="Right"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </StackPanel>
                     </ScrollViewer>
                 </StackPanel>
             </Border>

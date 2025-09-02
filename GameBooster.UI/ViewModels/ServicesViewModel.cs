@@ -39,6 +39,12 @@ public class ServicesViewModel : ViewModelBase
         EnableServiceCommand = new RelayCommand(async () => await EnableServiceAsync());
         DisableServiceCommand = new RelayCommand(async () => await DisableServiceAsync());
         ToggleStartupProgramCommand = new RelayCommand(async () => await ToggleStartupProgramAsync());
+        
+        // Individual Defender protection commands
+        ToggleRealTimeProtectionCommand = new RelayCommand(async () => await ToggleRealTimeProtectionAsync());
+        ToggleCloudProtectionCommand = new RelayCommand(async () => await ToggleCloudProtectionAsync());
+        ToggleTamperProtectionCommand = new RelayCommand(async () => await ToggleTamperProtectionAsync());
+        ToggleSampleSubmissionCommand = new RelayCommand(async () => await ToggleSampleSubmissionAsync());
 
         // Initial load
         _ = Task.Run(async () => await InitializeAsync());
@@ -52,6 +58,11 @@ public class ServicesViewModel : ViewModelBase
         get => _defenderStatus;
         set => this.RaiseAndSetIfChanged(ref _defenderStatus, value);
     }
+
+    /// <summary>
+    /// Whether there is defender status
+    /// </summary>
+    public bool HasDefenderStatus => DefenderStatus != null;
 
     /// <summary>
     /// List of Windows services
@@ -95,6 +106,16 @@ public class ServicesViewModel : ViewModelBase
     public bool IsNotElevated => !IsElevated;
 
     /// <summary>
+    /// Enabled startup programs
+    /// </summary>
+    public List<StartupProgram> EnabledStartupPrograms => StartupPrograms?.Where(p => p.IsEnabled).ToList() ?? new List<StartupProgram>();
+
+    /// <summary>
+    /// Disabled startup programs
+    /// </summary>
+    public List<StartupProgram> DisabledStartupPrograms => StartupPrograms?.Where(p => !p.IsEnabled).ToList() ?? new List<StartupProgram>();
+
+    /// <summary>
     /// Selected service for operations
     /// </summary>
     public SystemService? SelectedService
@@ -120,6 +141,10 @@ public class ServicesViewModel : ViewModelBase
     public ICommand EnableServiceCommand { get; }
     public ICommand DisableServiceCommand { get; }
     public ICommand ToggleStartupProgramCommand { get; }
+    public ICommand ToggleRealTimeProtectionCommand { get; }
+    public ICommand ToggleCloudProtectionCommand { get; }
+    public ICommand ToggleTamperProtectionCommand { get; }
+    public ICommand ToggleSampleSubmissionCommand { get; }
 
     /// <summary>
     /// Initialize the ViewModel
@@ -339,6 +364,102 @@ public class ServicesViewModel : ViewModelBase
         catch (Exception)
         {
             // _logger.LogError($"Error toggling startup program {SelectedStartupProgram.Name}: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Toggle real-time protection
+    /// </summary>
+    private async Task ToggleRealTimeProtectionAsync()
+    {
+        try
+        {
+            IsLoading = true;
+            var success = await _windowsServiceManager.ToggleDefenderRealTimeProtectionAsync();
+            if (success)
+            {
+                await RefreshAsync();
+            }
+        }
+        catch (Exception)
+        {
+            // Log error
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    /// <summary>
+    /// Toggle cloud protection
+    /// </summary>
+    private async Task ToggleCloudProtectionAsync()
+    {
+        try
+        {
+            IsLoading = true;
+            var success = await _windowsServiceManager.ToggleDefenderCloudProtectionAsync();
+            if (success)
+            {
+                await RefreshAsync();
+            }
+        }
+        catch (Exception)
+        {
+            // Log error
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    /// <summary>
+    /// Toggle tamper protection
+    /// </summary>
+    private async Task ToggleTamperProtectionAsync()
+    {
+        try
+        {
+            IsLoading = true;
+            var success = await _windowsServiceManager.ToggleDefenderTamperProtectionAsync();
+            if (success)
+            {
+                await RefreshAsync();
+            }
+        }
+        catch (Exception)
+        {
+            // Log error
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    /// <summary>
+    /// Toggle sample submission
+    /// </summary>
+    private async Task ToggleSampleSubmissionAsync()
+    {
+        try
+        {
+            IsLoading = true;
+            var success = await _windowsServiceManager.ToggleDefenderSampleSubmissionAsync();
+            if (success)
+            {
+                await RefreshAsync();
+            }
+        }
+        catch (Exception)
+        {
+            // Log error
+        }
+        finally
+        {
+            IsLoading = false;
         }
     }
 }

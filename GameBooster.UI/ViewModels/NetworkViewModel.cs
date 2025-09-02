@@ -73,6 +73,11 @@ public class NetworkViewModel : ViewModelBase
     }
 
     /// <summary>
+    /// Whether there are network stats
+    /// </summary>
+    public bool HasNetworkStats => NetworkStats != null;
+
+    /// <summary>
     /// Loading state
     /// </summary>
     public new bool IsLoading
